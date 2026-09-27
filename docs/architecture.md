@@ -1,17 +1,17 @@
-# Architecture — checkpoint 1
+# Architecture — checkpoint 2
 
 ## Accepted
 
 - One Next.js App Router application on Node.js 22, strict TypeScript and pnpm.
 - React and Tailwind for the mobile-first website; Stitch is the visual reference.
-- PostgreSQL with Drizzle and reviewed SQL migrations, starting in checkpoint 2.
+- PostgreSQL with Drizzle and reviewed SQL migrations, implemented in checkpoint 2.
 - A modular monolith; thin web adapters and explicit application services.
 - Vitest for unit/integration tests; Playwright against production builds for web flows.
 - Security, payment correctness and event-day recovery are acceptance criteria.
 
 The initial page is a holding page, not the event-publishing UI. System fonts avoid
 an external build-time font dependency; licensed/self-hosted brand fonts can be
-added during UI implementation. No auth, payments or customer data exist yet.
+added during UI implementation. No authentication, payment processing or customer-facing data endpoints exist yet.
 
 ## Boundaries
 
@@ -49,7 +49,7 @@ entry point for consumers; never serialize its full result to the browser.
 
 ## Before the next checkpoints
 
-Review docs/domain-model.md before schema changes. Select a maintained auth solution
+The accepted core model is migrated; review docs/domain-model.md before changing its invariants. Select a maintained auth solution
 supporting MFA before admin functionality; do not write password/session crypto.
 Decide hosting, email, retention, event capacity, table admission rules, late-payment
 policy and refund policy before the affected feature is implemented.
@@ -65,3 +65,17 @@ plugins bundled with the current Next ESLint config do not support ESLint 10.
 ESLint 9 has a registry deprecation notice; it is development-only. Track migration
 to supported ESLint 10 plugins before launch. Never suppress peer errors or assume
 new major versions are compatible merely because installation succeeds.
+
+## Checkpoint 2 persistence
+
+PostgreSQL 17 runs locally through Docker Compose, loopback only. Drizzle schema
+and committed SQL migrations define six core tables. Cross-table admission validation,
+reservation snapshots and historical immutability use reviewed PostgreSQL triggers.
+Runtime and migration credentials are separate; remote pg connections require verified
+TLS. Migration operations are explicit, transactional and serialized, not automatic
+web-server startup side effects. See src/db/README.md for operational details.
+
+Drizzle Kit 0.31.11 uses a legacy loader with an older esbuild dependency. A targeted
+pnpm override pins that loader's esbuild to 0.25.12 to address GHSA-67mh-4wv8-2f99.
+Migration generation and real PostgreSQL migration tests verify compatibility. Remove
+the override when an upstream stable release removes the vulnerable dependency.

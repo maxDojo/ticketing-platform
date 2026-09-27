@@ -1,6 +1,23 @@
-# Proposed domain model — review before checkpoint 2
+# Domain model — checkpoint 2
 
-This is a proposal, not an implemented schema or approved business policy.
+The core schema is implemented in `src/db/schema.ts` and the committed migrations.
+Accepted business rules: one event per order, multiple categories per order, optional
+attendee names, independent group admissions, configurable event reservations,
+snapshotted prices, multiple payment attempts with single fulfillment, and late-payment
+recovery. The remaining application workflows below are plans for later checkpoints.
+
+## Reservation and package decisions
+
+- Events default to a 10-minute reservation, configurable by the organizer.
+- Current guardrails allow whole minutes from 1 through 1440 (24 hours); changing
+  these limits requires aligning schema, validation, and tests.
+- The database captures the current event duration and database clock at order
+  creation; caller-supplied reservation timestamps/durations are overwritten.
+- Existing order deadlines are immutable. Editing event settings affects new orders only.
+- Inventory counters represent purchasable units, not people. Two tables for six
+  consume two units and produce twelve separate admissions with independent QR codes.
+- Order items snapshot admissions per unit. Later ticket-type edits cannot alter
+  purchased entitlement. Ticket ordinals are bounded by quantity × admissions per unit.
 
 | Entity      | Relationships and key invariants                                                                                |
 | ----------- | --------------------------------------------------------------------------------------------------------------- |
@@ -16,8 +33,8 @@ This is a proposal, not an implemented schema or approved business policy.
 | Outbox      | Durable side-effect record with unique business key, retries and execution status                               |
 | AuditLog    | Actor, action, resource, timestamp and minimal redacted context                                                 |
 
-Do not create all entities in checkpoint 2: introduce later concepts with their
-features. Keep attendee details on tickets initially if a standalone identity adds
+Only Event, TicketType, Order, OrderItem, Payment and Ticket exist in checkpoint 2.
+Reservation records, CheckIn, Refund, Outbox and AuditLog arrive with their features. Keep attendee details on tickets initially if a standalone identity adds
 no value. Discounts and promoter attribution arrive later with historical snapshots.
 
 Store amounts as integer minor units plus currency. Prefer PostgreSQL bigint with
@@ -27,7 +44,7 @@ explicit rounding rule. Use checks for nonnegative quantities/amounts and foreig
 keys for ownership. Ensure event consistency across orders, items and ticket types,
 using composite constraints where suitable rather than trusting a submitted ID.
 
-## State proposals
+## States
 
 Orders: pending, expired, paid, cancelled, refunded, partially_refunded. Payment
 attempts independently track failure; one failed attempt must not overwrite a paid
@@ -39,13 +56,13 @@ record rather than a second independently writable checked-in flag. Cancellation
 and refund must serialize with check-in on the same ticket. Define checked-in
 refund and re-entry policy before implementing either.
 
-## Inventory proposal
+## Inventory strategy (checkout implementation deferred)
 
 Reserve inventory when creating an order, not when browsing. Within a transaction,
 lock affected ticket types in stable order, check sale windows and quantities,
 atomically increase reserved inventory within capacity, and create order/items/holds.
 Use database constraints and conditional updates, not read-then-write application checks.
-The hold duration is configurable; 10 minutes is a proposal requiring review.
+The hold duration is organizer-configurable, with a 10-minute default and a frozen order deadline.
 
 Expiry workers and payment confirmation lock the same order/holds/type rows with
 consistent ordering. Expiry releases a hold once. Confirmation moves reserved to
@@ -55,9 +72,9 @@ understate availability but must never oversell. Test deadlocks and bounded retr
 A late successful payment must never blindly reclaim released inventory. Proposed
 policy: atomically reacquire if stock remains; otherwise record received funds and
 an unfulfilled payment exception, issue no ticket, and route to reconciliation/refund.
-The customer must see a recovery state. This policy needs review before checkout.
+The customer must see a recovery state. This recovery policy is accepted; its implementation and operational handling arrive with checkout/payments.
 
-## Payment confirmation and issuance proposal
+## Payment confirmation and issuance plan
 
 1. Generate a unique reference for each payment attempt against an immutable order total.
 2. Initialize through a provider adapter; use a durable record to recover ambiguous timeouts.
@@ -91,3 +108,22 @@ have their own expiry/revocation policy and must never grant staff/admin permiss
 Check-in locks the ticket, validates event/status/authorization and inserts a unique
 CheckIn atomically. Two simultaneous scanners yield one entry and one already-used
 result. Offline failure means unable to verify, never successful admission.
+
+## Enforced now versus later
+
+PostgreSQL currently enforces nonnegative/exact row totals, event/currency ownership,
+unique provider references, immutable order/item snapshots, valid timezones, inventory
+counter bounds, successful-payment verification fields, paid-order ticket prerequisites,
+and unique/bounded admissions. These are integrity constraints, not proof of provider
+verification or user authorization.
+
+Checkpoint 4 must reconcile item sums with order totals transactionally and enforce
+sale windows, quantity limits, event status, hold lifecycle and promo usage. The schema
+alone does not reserve or release stock. Checkpoint 5 must verify Paystack authenticity
+and prevent paid-state regressions. Checkpoint 6 must issue credentials with reviewed
+encryption/key management and unique fulfillment. Checkpoint 8 supplies the CheckIn
+record and admission authorization. No public database-backed API exists yet.
+
+Ticket credential columns are storage contracts only: SHA-256 verifier hex, encrypted
+credential envelope and key identifier. Only synthetic tests use placeholder encrypted
+values. No production issuance or encryption implementation is present.

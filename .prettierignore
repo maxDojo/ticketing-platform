@@ -8,3 +8,5 @@ TicketSquare — PROJECT_CONTEXT.md
 next-env.d.ts
 
 .pnpm-store
+
+drizzle/meta/

@@ -1,0 +1,20 @@
+# Local development only. Never expose this database to the internet.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ticketsquare
+      POSTGRES_PASSWORD: local-development-only
+      POSTGRES_DB: ticketsquare
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/local-database.sql:/docker-entrypoint-initdb.d/01-app-role.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ticketsquare -d ticketsquare"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+volumes:
+  postgres_data:
