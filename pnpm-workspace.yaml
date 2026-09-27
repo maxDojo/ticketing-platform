@@ -1,0 +1,5 @@
+# Use the resolver's packaged native binaries; do not run its install script.
+allowBuilds:
+  unrs-resolver: false
+saveExact: true
+engineStrict: true

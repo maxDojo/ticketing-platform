@@ -1,0 +1,10 @@
+pnpm-lock.yaml
+.next
+node_modules
+coverage
+playwright-report
+test-results
+TicketSquare — PROJECT_CONTEXT.md
+next-env.d.ts
+
+.pnpm-store
