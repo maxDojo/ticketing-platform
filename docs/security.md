@@ -48,3 +48,15 @@ PII, access URLs or session tokens may appear in NEXT_PUBLIC variables or analyt
 Report security issues privately to the maintainer; never include credentials or
 customer information in public issue reports. A public reporting contact must be
 established before launch.
+
+## Added in checkpoint 2
+
+- Restricted local runtime role, separate migration credential and loopback-only Docker port.
+- Remote PostgreSQL TLS certificate validation and rejection of SSL URL overrides.
+- Bounded connection pool/timeouts and redacted connection/migration errors.
+- Database constraints for ownership, amounts, snapshot immutability and admission identity.
+- Real PostgreSQL tests for cross-event/currency violations, migration reruns, rollback,
+  concurrent inventory updates and duplicate admissions.
+- No public routes expose this model. Authentication/authorization remain checkpoint 3 gates.
+- The migration tool's legacy esbuild dependency is overridden to a patched version;
+  migration compatibility is tested rather than ignoring the advisory.

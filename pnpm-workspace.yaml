@@ -1,5 +1,10 @@
 # Use the resolver's packaged native binaries; do not run its install script.
 allowBuilds:
   unrs-resolver: false
+  esbuild: true
 saveExact: true
 engineStrict: true
+# drizzle-kit 0.31's legacy loader pulls a vulnerable esbuild dev server.
+# Keep the loader on a patched version until upstream removes that dependency.
+overrides:
+  "@esbuild-kit/core-utils>esbuild": "0.25.12"

@@ -8,9 +8,24 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: ticketsquare
+          POSTGRES_PASSWORD: local-development-only
+          POSTGRES_DB: ticketsquare
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U ticketsquare -d ticketsquare"
+          --health-interval 2s --health-timeout 3s --health-retries 20
     env:
       APP_URL: http://127.0.0.1:3100
       NEXT_TELEMETRY_DISABLED: "1"
+      DATABASE_URL: postgresql://ticketsquare_app:local-app-only@127.0.0.1:5433/ticketsquare
+      MIGRATION_DATABASE_URL: postgresql://ticketsquare:local-development-only@127.0.0.1:5433/ticketsquare
+      TEST_DATABASE_URL: postgresql://ticketsquare:local-development-only@127.0.0.1:5433/postgres
     steps:
       - uses: actions/checkout@v4
         with:
@@ -20,6 +35,9 @@ jobs:
           node-version: "22"
       - run: npm install --global pnpm@11.1.2
       - run: pnpm install --frozen-lockfile
+      - run: PGPASSWORD=local-development-only psql -h 127.0.0.1 -p 5433 -U ticketsquare -d ticketsquare -v ON_ERROR_STOP=1 -f scripts/local-database.sql
+      - run: pnpm db:migrate
+      - run: pnpm test:integration
       - run: pnpm check
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e
