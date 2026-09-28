@@ -1,4 +1,4 @@
-# Domain model — checkpoint 2
+# Domain model — checkpoints 2–4
 
 The core schema is implemented in `src/db/schema.ts` and the committed migrations.
 Accepted business rules: one event per order, multiple categories per order, optional
@@ -33,8 +33,10 @@ recovery. The remaining application workflows below are plans for later checkpoi
 | Outbox      | Durable side-effect record with unique business key, retries and execution status                               |
 | AuditLog    | Actor, action, resource, timestamp and minimal redacted context                                                 |
 
-Only Event, TicketType, Order, OrderItem, Payment and Ticket exist in checkpoint 2.
-Reservation records, CheckIn, Refund, Outbox and AuditLog arrive with their features. Keep attendee details on tickets initially if a standalone identity adds
+Checkpoint 2 introduced Event, TicketType, Order, OrderItem, Payment and Ticket.
+Checkpoint 3 added organizer authentication and admin audit records. Checkpoint 4
+adds reservations and private guest retry identities. CheckIn, Refund and Outbox
+remain future work. Keep attendee details on tickets initially if a standalone identity adds
 no value. Discounts and promoter attribution arrive later with historical snapshots.
 
 Store amounts as integer minor units plus currency. Prefer PostgreSQL bigint with
@@ -56,7 +58,7 @@ record rather than a second independently writable checked-in flag. Cancellation
 and refund must serialize with check-in on the same ticket. Define checked-in
 refund and re-entry policy before implementing either.
 
-## Inventory strategy (checkout implementation deferred)
+## Inventory strategy (implemented in checkpoint 4)
 
 Reserve inventory when creating an order, not when browsing. Within a transaction,
 lock affected ticket types in stable order, check sale windows and quantities,
@@ -117,12 +119,13 @@ counter bounds, successful-payment verification fields, paid-order ticket prereq
 and unique/bounded admissions. These are integrity constraints, not proof of provider
 verification or user authorization.
 
-Checkpoint 4 must reconcile item sums with order totals transactionally and enforce
-sale windows, quantity limits, event status, hold lifecycle and promo usage. The schema
-alone does not reserve or release stock. Checkpoint 5 must verify Paystack authenticity
+Checkpoint 4 reconciles item sums with order totals transactionally and enforces
+sale windows, quantity limits, event status and hold lifecycle. Guest checkout and
+its expiry worker now reserve and release stock. Promo usage remains checkpoint 9;
+fees and discounts are currently zero. See [checkout operations](checkout.md). Checkpoint 5 must verify Paystack authenticity
 and prevent paid-state regressions. Checkpoint 6 must issue credentials with reviewed
 encryption/key management and unique fulfillment. Checkpoint 8 supplies the CheckIn
-record and admission authorization. No public database-backed API exists yet.
+record and admission authorization. Guest order APIs require a private browser credential.
 
 Ticket credential columns are storage contracts only: SHA-256 verifier hex, encrypted
 credential envelope and key identifier. Only synthetic tests use placeholder encrypted

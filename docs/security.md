@@ -79,3 +79,19 @@ established before launch.
 See [organizer operations](organizer-access.md) for setup and limitations. Recovery
 administration, security-management UI, rate-limit cleanup, host-specific proxy and
 edge controls, monitoring, and a production security review remain launch gates.
+
+## Added in checkpoint 4
+
+- Guest access uses a random HttpOnly/SameSite cookie, secure host-only cookies on
+  HTTPS, hashed database credentials, bounded lifetime and no credentials in URLs.
+- Order APIs omit buyer contact details, deny cross-guest access and reject client
+  pricing, oversized requests and foreign-origin mutations.
+- Shared and guest throttles bound checkout calls; deployment-specific anti-bot
+  protections and quota tuning remain required before public sales.
+- Transactional inventory reservations, immutable commercial snapshots, retry keys,
+  deterministic row locking and expiry/cancellation prevent duplicate reservations
+  on retry and overselling under tested contention.
+- Expiry worker and operational guidance added. Production scheduling, backlog
+  alerts, buyer-data retention/deletion and recovery remain deployment gates.
+- No payment confirmation or admission issuance is exposed; even zero-price orders
+  remain pending. See [checkout operations](checkout.md) for limits and tests.

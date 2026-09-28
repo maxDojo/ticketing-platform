@@ -94,7 +94,7 @@ it("applies committed migrations twice without duplicating tables or journal ent
       (await pool.query("SELECT count(*) FROM drizzle.__drizzle_migrations"))
         .rows[0].count,
     ),
-  ).toBe(4);
+  ).toBe(6);
 });
 it("preserves reservation snapshots when the organizer changes the duration", async () => {
   const f = await fixture();
@@ -302,7 +302,7 @@ it("uses a restricted runtime role without schema or destructive privileges", as
   const runtime = new Pool(databaseConfig(process.env.DATABASE_URL));
   try {
     const result = await runtime.query(
-      "SELECT has_schema_privilege(current_user, 'public', 'CREATE') AS can_create, has_table_privilege(current_user, 'events', 'SELECT') AS can_read, has_table_privilege(current_user, 'orders', 'DELETE') AS can_delete, has_table_privilege(current_user, 'organizers', 'INSERT') AS can_grant, has_table_privilege(current_user, 'organizers', 'UPDATE') AS can_promote, has_table_privilege(current_user, 'admin_audit', 'UPDATE') AS can_rewrite_audit, has_table_privilege(current_user, 'admin_audit', 'DELETE') AS can_delete_audit",
+      "SELECT has_schema_privilege(current_user, 'public', 'CREATE') AS can_create, has_table_privilege(current_user, 'events', 'SELECT') AS can_read, has_table_privilege(current_user, 'orders', 'DELETE') AS can_delete, has_table_privilege(current_user, 'organizers', 'INSERT') AS can_grant, has_table_privilege(current_user, 'organizers', 'UPDATE') AS can_promote, has_table_privilege(current_user, 'admin_audit', 'UPDATE') AS can_rewrite_audit, has_table_privilege(current_user, 'admin_audit', 'DELETE') AS can_delete_audit, has_table_privilege(current_user, 'checkout_requests', 'UPDATE') AS can_reassign_guest, has_table_privilege(current_user, 'reservations', 'DELETE') AS can_delete_hold",
     );
     expect(result.rows[0]).toEqual({
       can_create: false,
@@ -312,6 +312,8 @@ it("uses a restricted runtime role without schema or destructive privileges", as
       can_promote: false,
       can_rewrite_audit: false,
       can_delete_audit: false,
+      can_reassign_guest: false,
+      can_delete_hold: false,
     });
   } finally {
     await runtime.end();

@@ -1,6 +1,6 @@
 # TicketSquare
 
-Mobile-first event ticketing for TicketSquare.ng. Checkpoint 3 adds organizer sign-in with mandatory MFA, event and ticket category management, private drafts, and public event pages. Checkout and ticket issuance are not implemented yet.
+Mobile-first event ticketing for TicketSquare.ng. Checkpoint 4 adds guest checkout, exact server pricing, inventory reservations, cancellation and expiry. Organizer MFA, event management and public pages are available. Payments and ticket issuance are not implemented yet.
 
 ## Requirements and local setup
 
@@ -59,9 +59,10 @@ docs/             Architecture, security and proposed domain decisions
 Read [architecture](docs/architecture.md), [domain proposal](docs/domain-model.md)
 and [security requirements](docs/security.md). The domain proposal covers reservations,
 late payments, payment attempts, issuance idempotency and atomic check-in. The core model now has committed migrations and PostgreSQL integration tests.
-Checkpoint 3 is implemented. Follow [organizer access](docs/organizer-access.md) to create
-your account and publish an event. Next is checkpoint 4: orders, server-side pricing,
-and inventory reservations.
+Checkpoint 4 is implemented. Follow [organizer access](docs/organizer-access.md) to create
+your account and publish an event. Follow [checkout operations](docs/checkout.md) to
+try reservations and run `pnpm orders:worker` in a second terminal for timely stock
+release. Next is checkpoint 5: Paystack integration and payment verification.
 
 The holding page establishes basic palette and layout; it does not replace the
 Stitch event/checkout/ticket designs. Security work remains at every later checkpoint;

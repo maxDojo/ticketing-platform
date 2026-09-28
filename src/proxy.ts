@@ -16,7 +16,8 @@ export function proxy(request: NextRequest) {
   if (
     request.nextUrl.pathname.startsWith("/admin") ||
     request.nextUrl.pathname.startsWith("/api") ||
-    request.nextUrl.pathname.startsWith("/events")
+    request.nextUrl.pathname.startsWith("/events") ||
+    request.nextUrl.pathname.startsWith("/checkout")
   ) {
     response.headers.set("Cache-Control", "private, no-store");
     response.headers.set("X-Robots-Tag", "noindex, nofollow");
