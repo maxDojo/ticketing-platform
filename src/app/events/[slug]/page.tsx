@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Image from "next/image";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
@@ -113,9 +114,14 @@ export default async function PublicEvent({
               </section>
             ))}
             {!types.length && <p>Ticket details will be announced soon.</p>}
+            {!preview && (
+              <Link className="button" href={`/checkout/${slug}`}>
+                Choose tickets
+              </Link>
+            )}
             <div className="notice">
-              Online booking is not open yet. Ticket purchasing will be
-              available soon.
+              Payments are not open yet. You can preview checkout and reserve
+              tickets, but reservations do not grant admission.
             </div>
           </aside>
         </div>

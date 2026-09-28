@@ -23,11 +23,10 @@ category to publish. Times are entered in the event's IANA timezone. Ambiguous
 clock-change times are rejected. Prices are entered in naira and stored as exact
 integer kobo. Capacity counts packages; people admitted per unit controls the
 number of separate admissions. Reservation duration defaults to 10 minutes and
-supports 1–1,440 minutes. This setting does not yet start a checkout reservation.
+supports 1–1,440 minutes. New checkout orders now capture this setting as their immutable hold duration.
 
 Draft previews require their owner's authenticated MFA session. Published events
-appear at `/events/<slug>`. Booking is explicitly unavailable until checkout is
-implemented. Artwork is an optional HTTPS URL loaded by the visitor's browser;
+appear at `/events/<slug>`. Guests can reserve tickets; payments and issuance remain unavailable. Artwork is an optional HTTPS URL loaded by the visitor's browser;
 use a trusted host you control. No upload or server-side remote image fetch occurs.
 
 ## Sessions and recovery

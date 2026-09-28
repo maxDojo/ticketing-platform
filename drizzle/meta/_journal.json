@@ -29,6 +29,20 @@
       "when": 1790611110958,
       "tag": "0003_auth_role_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790625537510,
+      "tag": "0004_checkout_reservations",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790625631631,
+      "tag": "0005_reservation_guards",
+      "breakpoints": true
     }
   ]
 }

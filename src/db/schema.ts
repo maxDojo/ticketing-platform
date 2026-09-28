@@ -311,3 +311,44 @@ export const tickets = pgTable(
     ),
   ],
 );
+
+export const checkoutRequests = pgTable(
+  "checkout_requests",
+  {
+    orderId: uuid("order_id")
+      .primaryKey()
+      .references(() => orders.id),
+    guestHash: varchar("guest_hash", { length: 64 }).notNull(),
+    requestKey: uuid("request_key").notNull(),
+    fingerprint: varchar("fingerprint", { length: 64 }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [unique("checkout_retry_key").on(t.guestHash, t.requestKey)],
+);
+
+export const reservationState = pgEnum("reservation_state", [
+  "held",
+  "released",
+  "committed",
+]);
+export const reservations = pgTable(
+  "reservations",
+  {
+    orderItemId: uuid("order_item_id")
+      .primaryKey()
+      .references(() => orderItems.id),
+    orderId: uuid("order_id")
+      .notNull()
+      .references(() => orders.id),
+    ticketTypeId: uuid("ticket_type_id")
+      .notNull()
+      .references(() => ticketTypes.id),
+    quantity: integer("quantity").notNull(),
+    state: reservationState("state").notNull().default("held"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("reservations_order_idx").on(t.orderId),
+    check("reservation_quantity", sql`${t.quantity} > 0`),
+  ],
+);
