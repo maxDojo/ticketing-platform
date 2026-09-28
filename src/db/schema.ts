@@ -15,6 +15,9 @@ import {
   index,
 } from "drizzle-orm/pg-core";
 
+import { authUser } from "./auth-schema";
+export * from "./auth-schema";
+
 const createdAt = () =>
   timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 const money = (name: string) => bigint(name, { mode: "bigint" });
@@ -49,6 +52,10 @@ export const events = pgTable(
   "events",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    organizerId: text("organizer_id").references(() => authUser.id, {
+      onDelete: "restrict",
+    }),
+    artworkUrl: text("artwork_url"),
     slug: varchar("slug", { length: 160 }).notNull().unique(),
     name: varchar("name", { length: 200 }).notNull(),
     description: text("description").notNull().default(""),
