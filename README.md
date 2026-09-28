@@ -1,7 +1,6 @@
 # TicketSquare
 
-Mobile-first event ticketing for TicketSquare.ng. Checkpoint 2 adds PostgreSQL, migrations and the core domain schema. Event setup,
-authentication, checkout and ticket issuance are not implemented yet. The original project context is preserved.
+Mobile-first event ticketing for TicketSquare.ng. Checkpoint 3 adds organizer sign-in with mandatory MFA, event and ticket category management, private drafts, and public event pages. Checkout and ticket issuance are not implemented yet.
 
 ## Requirements and local setup
 
@@ -12,12 +11,14 @@ authentication, checkout and ticket issuance are not implemented yet. The origin
 ```sh
 pnpm install --frozen-lockfile
 cp .env.example .env.local
+# Set BETTER_AUTH_SECRET in .env.local using: openssl rand -base64 48
 pnpm db:up
 pnpm db:migrate
 pnpm dev
 ```
 
-Open http://localhost:3000. `APP_URL` and `DATABASE_URL` are required at startup. The example supplies
+Open the exact `APP_URL` from your configuration (normally http://127.0.0.1:3000).
+`APP_URL`, `DATABASE_URL`, and `BETTER_AUTH_SECRET` are required at startup. The example supplies
 local-only database credentials; no payment keys are needed. Local configuration is ignored by Git. Never
 commit secrets or put credentials in `NEXT_PUBLIC_*` variables.
 
@@ -58,7 +59,9 @@ docs/             Architecture, security and proposed domain decisions
 Read [architecture](docs/architecture.md), [domain proposal](docs/domain-model.md)
 and [security requirements](docs/security.md). The domain proposal covers reservations,
 late payments, payment attempts, issuance idempotency and atomic check-in. The core model now has committed migrations and PostgreSQL integration tests.
-Next is checkpoint 3: authentication, event management and the public event page.
+Checkpoint 3 is implemented. Follow [organizer access](docs/organizer-access.md) to create
+your account and publish an event. Next is checkpoint 4: orders, server-side pricing,
+and inventory reservations.
 
 The holding page establishes basic palette and layout; it does not replace the
 Stitch event/checkout/ticket designs. Security work remains at every later checkpoint;
@@ -82,5 +85,4 @@ is missing or points remotely. CI provides PostgreSQL and runs these tests autom
 No mocked database is used. The test suite also checks the local runtime role permissions.
 
 The app shell can build without a reachable database but DATABASE_URL must have a valid
-shape. Start or restart the dev server after updating environment variables. The current
-page is unchanged; this checkpoint adds persistence infrastructure, not new user screens.
+shape. Start or restart the dev server after updating environment variables. Organizer screens start at `/admin/sign-in`; published pages use `/events/<slug>`.

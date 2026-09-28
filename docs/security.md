@@ -57,6 +57,25 @@ established before launch.
 - Database constraints for ownership, amounts, snapshot immutability and admission identity.
 - Real PostgreSQL tests for cross-event/currency violations, migration reruns, rollback,
   concurrent inventory updates and duplicate admissions.
-- No public routes expose this model. Authentication/authorization remain checkpoint 3 gates.
+- Checkpoint 2 exposed no public routes; checkpoint 3 adds authorized management and published event reads.
 - The migration tool's legacy esbuild dependency is overridden to a patched version;
   migration compatibility is tested rather than ignoring the advisory.
+
+## Added in checkpoint 3
+
+- Maintained Better Auth authentication, provisioned organizers only, mandatory TOTP
+  and per-session verification; recovery codes supported and device trust disabled.
+- Server-side event ownership checks, unpublished-event isolation, active membership
+  checks, and an append-only application audit trail.
+- Explicit auth endpoint allowlist, exact-origin checks for mutations, bounded JSON,
+  persistent throttling, input validation and plain-text event descriptions.
+- Runtime role cannot grant organizer access or modify/delete audit history.
+- HTTPS-only artwork URLs rendered directly in the browser with suppressed referrers;
+  CSP permits HTTPS images, so organizers must use trusted artwork hosts.
+- Desktop/mobile tests exercise enrollment, older unverified sessions, password-only
+  denial, recovery-code login, deactivation, draft privacy and cross-owner access.
+- Concurrent PostgreSQL tests cover atomic authentication limits and expiry.
+
+See [organizer operations](organizer-access.md) for setup and limitations. Recovery
+administration, security-management UI, rate-limit cleanup, host-specific proxy and
+edge controls, monitoring, and a production security review remain launch gates.

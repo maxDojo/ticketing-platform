@@ -11,7 +11,9 @@ function createPool() {
   pool.on("error", () => console.error("Database connection error"));
   return pool;
 }
+export function getPool() {
+  return (globalDatabase.ticketSquarePool ??= createPool());
+}
 export function getDatabase() {
-  const pool = (globalDatabase.ticketSquarePool ??= createPool());
-  return drizzle(pool, { schema });
+  return drizzle(getPool(), { schema });
 }

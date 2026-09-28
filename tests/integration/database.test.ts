@@ -7,6 +7,7 @@ import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { databaseConfig } from "../../src/config/database";
+import { consumeLimit } from "../../src/modules/auth/throttle";
 import { ticketTypes } from "../../src/db/schema";
 if (existsSync(".env.local")) loadEnvFile(".env.local");
 const testUrl = process.env.TEST_DATABASE_URL;
@@ -93,7 +94,7 @@ it("applies committed migrations twice without duplicating tables or journal ent
       (await pool.query("SELECT count(*) FROM drizzle.__drizzle_migrations"))
         .rows[0].count,
     ),
-  ).toBe(2);
+  ).toBe(4);
 });
 it("preserves reservation snapshots when the organizer changes the duration", async () => {
   const f = await fixture();
@@ -301,14 +302,32 @@ it("uses a restricted runtime role without schema or destructive privileges", as
   const runtime = new Pool(databaseConfig(process.env.DATABASE_URL));
   try {
     const result = await runtime.query(
-      "SELECT has_schema_privilege(current_user, 'public', 'CREATE') AS can_create, has_table_privilege(current_user, 'events', 'SELECT') AS can_read, has_table_privilege(current_user, 'orders', 'DELETE') AS can_delete",
+      "SELECT has_schema_privilege(current_user, 'public', 'CREATE') AS can_create, has_table_privilege(current_user, 'events', 'SELECT') AS can_read, has_table_privilege(current_user, 'orders', 'DELETE') AS can_delete, has_table_privilege(current_user, 'organizers', 'INSERT') AS can_grant, has_table_privilege(current_user, 'organizers', 'UPDATE') AS can_promote, has_table_privilege(current_user, 'admin_audit', 'UPDATE') AS can_rewrite_audit, has_table_privilege(current_user, 'admin_audit', 'DELETE') AS can_delete_audit",
     );
     expect(result.rows[0]).toEqual({
       can_create: false,
       can_read: true,
       can_delete: false,
+      can_grant: false,
+      can_promote: false,
+      can_rewrite_audit: false,
+      can_delete_audit: false,
     });
   } finally {
     await runtime.end();
   }
+});
+
+it("enforces shared authentication limits atomically and resets expired windows", async () => {
+  const identity = randomUUID();
+  const results = await Promise.all(
+    Array.from({ length: 20 }, () => consumeLimit(pool, identity, 5, 900)),
+  );
+  expect(results.filter(Boolean)).toHaveLength(5);
+  expect(await consumeLimit(pool, randomUUID(), 5, 900)).toBe(true);
+  await pool.query(
+    "UPDATE auth_throttle SET resets_at=now()-interval '1 second' WHERE key=$1",
+    [createHash("sha256").update(identity).digest("hex")],
+  );
+  expect(await consumeLimit(pool, identity, 5, 900)).toBe(true);
 });
