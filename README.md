@@ -62,7 +62,8 @@ late payments, payment attempts, issuance idempotency and atomic check-in. The c
 Checkpoint 4 is implemented. Follow [organizer access](docs/organizer-access.md) to create
 your account and publish an event. Follow [checkout operations](docs/checkout.md) to
 try reservations and run `pnpm orders:worker` in a second terminal for timely stock
-release. Next is checkpoint 5: Paystack integration and payment verification.
+release. Checkpoint 5 step 1 adds optional test-only Paystack initialization; see
+[payment setup and review](docs/payments.md). Verification is the next review step.
 
 The holding page establishes basic palette and layout; it does not replace the
 Stitch event/checkout/ticket designs. Security work remains at every later checkpoint;
