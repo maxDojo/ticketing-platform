@@ -43,6 +43,13 @@
       "when": 1790625631631,
       "tag": "0005_reservation_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790641129525,
+      "tag": "0006_payment_initialization",
+      "breakpoints": true
     }
   ]
 }

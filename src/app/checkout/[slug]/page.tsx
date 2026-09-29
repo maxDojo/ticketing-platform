@@ -1,3 +1,4 @@
+import { paymentConfig } from "@/config/payments";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
@@ -24,11 +25,12 @@ export default async function Checkout({
         <p className="eyebrow">Your next experience</p>
         <h1>{data.event.name}</h1>
         <p className="notice">
-          Reservation preview: payments are not available yet. A reservation
-          does not grant admission.
+          Test preview only. Reservations and test payments do not grant
+          admission.
         </p>
         <CheckoutForm
           eventId={data.event.id}
+          testPaymentsEnabled={!!paymentConfig(process.env)}
           types={data.types.map((t) => ({
             id: t.id,
             name: t.name,

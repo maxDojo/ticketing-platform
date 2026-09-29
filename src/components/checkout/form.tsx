@@ -14,6 +14,7 @@ type Summary = {
   id: string;
   reference: string;
   status: string;
+  payment_started: boolean;
   total: string;
   currency: string;
   reservation_expires_at: string;
@@ -41,9 +42,11 @@ async function call(path: string, body?: unknown): Promise<Summary> {
 export function CheckoutForm({
   eventId,
   types,
+  testPaymentsEnabled,
 }: {
   eventId: string;
   types: TicketOption[];
+  testPaymentsEnabled: boolean;
 }) {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [order, setOrder] = useState<Summary | null>(null);
@@ -146,6 +149,35 @@ export function CheckoutForm({
       setBusy(false);
     }
   }
+  async function pay() {
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/orders/${order!.id}/payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(data.error ?? "Unable to prepare payment.");
+      const url = new URL(data.authorizationUrl);
+      if (url.origin !== "https://checkout.paystack.com")
+        throw new Error("Invalid checkout destination.");
+      window.location.assign(url.href);
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Please review your test payment.",
+      );
+      try {
+        setOrder(await call(`/api/orders/${order!.id}`));
+      } catch {
+        /* Preserve the original error. */
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
   async function cancel() {
     setBusy(true);
     setError("");
@@ -204,11 +236,36 @@ export function CheckoutForm({
             </div>
           ))}
           <p className="price">Total: {formatMoney(BigInt(order.total))}</p>
-          <p>No payment has been taken and no tickets have been issued.</p>
+          <p>
+            {order.payment_started
+              ? "A test payment was started. Verification is not implemented yet; check Paystack before trying again. No tickets have been issued."
+              : "No payment has been started and no tickets have been issued."}
+          </p>
+          {testPaymentsEnabled &&
+            order.status === "pending" &&
+            BigInt(order.total) > 0n && (
+              <button
+                className="button"
+                disabled={busy || remaining === 0}
+                onClick={pay}
+              >
+                {busy
+                  ? "Please wait…"
+                  : order.payment_started
+                    ? "Resume Paystack test checkout"
+                    : "Continue to Paystack (test)"}
+              </button>
+            )}
+          {testPaymentsEnabled && (
+            <p className="muted">
+              TicketSquare absorbs processing fees. Test mode only; do not use
+              real payment details.
+            </p>
+          )}
           {order.status === "pending" ? (
             <button
               className="button secondary"
-              disabled={busy}
+              disabled={busy || order.payment_started}
               onClick={cancel}
             >
               Cancel reservation

@@ -7,7 +7,7 @@ export const digest = (v: string) =>
 
 // Lock order is: retry key, event (creation only), order, ticket types by UUID.
 // Expiry/cancellation never lock an event; no provider calls occur in transactions.
-async function transaction<T>(
+export async function transaction<T>(
   pool: Pool,
   work: (db: PoolClient) => Promise<T>,
 ): Promise<T> {
@@ -38,7 +38,7 @@ async function summary(db: PoolClient, id: string) {
   const {
     rows: [o],
   } = await db.query(
-    "SELECT id, reference, status, currency, subtotal::text, discount::text, fees::text, total::text, reservation_expires_at, clock_timestamp() AS server_now FROM orders WHERE id=$1",
+    "SELECT id, reference, status, currency, subtotal::text, discount::text, fees::text, total::text, reservation_expires_at, clock_timestamp() AS server_now, EXISTS (SELECT 1 FROM payments p WHERE p.order_id=orders.id) AS payment_started FROM orders WHERE id=$1",
     [id],
   );
   const { rows: items } = await db.query(
@@ -245,6 +245,15 @@ export async function accessOrder(
       [id, digest(guest)],
     );
     if (!o) throw new OrderError(404, "Order not found.");
+    if (
+      cancel &&
+      (await db.query("SELECT 1 FROM payments WHERE order_id=$1 LIMIT 1", [id]))
+        .rowCount
+    )
+      throw new OrderError(
+        409,
+        "A payment attempt exists. Payment status must be resolved before cancellation.",
+      );
     if (o.status === "pending" && (cancel || o.elapsed))
       await release(db, id, o.elapsed ? "expired" : "cancelled");
     else if (cancel && !["expired", "cancelled"].includes(o.status))
