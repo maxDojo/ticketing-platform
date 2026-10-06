@@ -104,3 +104,38 @@ provider URL/reference validation and bounded requests protect this initial path
 Ambiguous outcomes block new attempts; returns never mark an order paid. Customer
 payments remain disabled pending verification, recovery and the remaining launch
 gates. See [payment setup](payments.md).
+
+## Payment verification review step
+
+- Webhooks require raw-byte HMAC-SHA512 verification and bounded payloads. Durable
+  receipts/jobs are committed before acknowledgment; raw provider payloads are not retained.
+- Verification uses a fixed provider endpoint and checks the reference, test domain,
+  currency and exact saved amount. Guest references do not authorize access alone.
+- Confirmation atomically records payment, fees and one fulfillment and moves inventory;
+  successful payments and paid orders cannot regress to unpaid states.
+- Worker leases, backoff, missed-job recovery and attention escalation protect against
+  crashes and ambiguous outcomes. Rechecks require organizer MFA and ownership.
+- Late inventory failures and duplicate successful charges are recorded for manual review;
+  no automatic refund or ticket issuance is claimed.
+- Test-account recovery verified. Public webhook delivery, worker supervision, incident
+  alerts, retention, refund operations and production readiness remain launch gates.
+
+### Temporary dependency audit exception (review by 2026-10-20)
+
+The final audit reports GHSA-vfj7-8cjw-p6xm in `braces@3.0.3`, pulled by the
+Next.js ESLint plugin through fast-glob and micromatch. The registry currently
+reports 3.0.3 as latest and does not resolve the audit's recommended 3.0.4.
+The reviewed dependency path is development-only. The plugin calls fast-glob
+for a custom `settings.next.rootDir` pattern; our ESLint configuration does not
+set that option, and no buyer input reaches this lint configuration.
+
+`pnpm audit:deps` first runs the production audit with no exceptions, then the
+full audit with only this advisory excluded until 2026-10-20 (UTC). After that
+date the full audit runs without the exception automatically. Registry errors
+and every other advisory still fail the command. This is a temporary acceptance
+of the assessed development-tool exposure, not a patch to braces.
+
+Review this exception when changing the lint configuration or dependency path.
+Remove it as soon as a patched release is available; the project maintainer owns
+the review. Use `pnpm audit --audit-level=low` to see the unfiltered report.
+The separate source-map-js advisory was resolved by updating to 1.2.2.

@@ -1,3 +1,6 @@
+import { eventPayments } from "@/modules/payments/admin";
+import { RecheckPayment } from "@/components/payments/recheck";
+import { formatMoney } from "@/modules/events/validation";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
@@ -20,6 +23,7 @@ export default async function Manage({
     throw e;
   });
   const { event, types } = result;
+  const payments = await eventPayments(await headers(), id);
   return (
     <AdminShell>
       <div className="page-title">
@@ -75,6 +79,38 @@ export default async function Manage({
           <summary>Add a ticket type</summary>
           <TicketForm eventId={id} />
         </details>
+      </section>
+      <section className="stack">
+        <h2>Payment review</h2>
+        <p>
+          Latest 50 attempts. Exceptions require review; rechecking never
+          initiates a refund.
+        </p>
+        {!payments.length && <p>No payment attempts yet.</p>}
+        {payments.map((p) => (
+          <article className="panel stack" key={p.id}>
+            <h3>{p.provider_reference}</h3>
+            <p>
+              Status: {p.status} · Verification:{" "}
+              {p.job_state ?? "awaiting queue"}
+            </p>
+            <p>
+              Amount: {formatMoney(BigInt(p.expected_amount))} · Paystack fees:{" "}
+              {p.provider_fees == null
+                ? "Not reported"
+                : formatMoney(BigInt(p.provider_fees))}
+            </p>
+            {p.exceptions.length > 0 && (
+              <p className="error">
+                Review history:{" "}
+                {p.exceptions
+                  .map((reason: string) => reason.replaceAll("_", " "))
+                  .join(", ")}
+              </p>
+            )}
+            <RecheckPayment eventId={id} paymentId={p.id} />
+          </article>
+        ))}
       </section>
     </AdminShell>
   );

@@ -246,6 +246,7 @@ export const payments = pgTable(
     verifiedAmount: money("verified_amount"),
     verifiedCurrency: varchar("verified_currency", { length: 3 }),
     verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    providerFees: money("provider_fees"),
     status: paymentStatus("status").notNull().default("initialized"),
     createdAt: createdAt(),
   },
@@ -379,4 +380,59 @@ export const paymentInitializations = pgTable(
       sql`(${t.state} = 'ready') = (${t.authorizationUrl} is not null)`,
     ),
   ],
+);
+
+export const paymentJobs = pgTable(
+  "payment_jobs",
+  {
+    paymentId: uuid("payment_id")
+      .primaryKey()
+      .references(() => payments.id),
+    state: text("state").notNull().default("pending"),
+    attempts: integer("attempts").notNull().default(0),
+    generation: integer("generation").notNull().default(0),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    leaseId: uuid("lease_id"),
+    leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
+    lastOutcome: text("last_outcome"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check(
+      "payment_job_state",
+      sql`${t.state} in ('pending','done','attention')`,
+    ),
+    index("payment_jobs_due_idx").on(t.state, t.nextAttemptAt),
+  ],
+);
+export const paymentWebhookReceipts = pgTable("payment_webhook_receipts", {
+  digest: varchar("digest", { length: 64 }).primaryKey(),
+  paymentId: uuid("payment_id")
+    .notNull()
+    .references(() => payments.id),
+  createdAt: createdAt(),
+});
+export const paymentFulfillments = pgTable("payment_fulfillments", {
+  orderId: uuid("order_id")
+    .primaryKey()
+    .references(() => orders.id),
+  paymentId: uuid("payment_id")
+    .notNull()
+    .unique()
+    .references(() => payments.id),
+  createdAt: createdAt(),
+});
+export const paymentExceptions = pgTable(
+  "payment_exceptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    paymentId: uuid("payment_id")
+      .notNull()
+      .references(() => payments.id),
+    reason: text("reason").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [unique("payment_exception_once").on(t.paymentId, t.reason)],
 );

@@ -1,4 +1,4 @@
-# Domain model — checkpoints 2–4
+# Domain model — checkpoints 2–5
 
 The core schema is implemented in `src/db/schema.ts` and the committed migrations.
 Accepted business rules: one event per order, multiple categories per order, optional
@@ -122,8 +122,9 @@ verification or user authorization.
 Checkpoint 4 reconciles item sums with order totals transactionally and enforces
 sale windows, quantity limits, event status and hold lifecycle. Guest checkout and
 its expiry worker now reserve and release stock. Promo usage remains checkpoint 9;
-fees and discounts are currently zero. See [checkout operations](checkout.md). Checkpoint 5 must verify Paystack authenticity
-and prevent paid-state regressions. Checkpoint 6 must issue credentials with reviewed
+fees and discounts are currently zero. See [checkout operations](checkout.md). Checkpoint 5 now verifies test-mode Paystack transactions, queues signed webhook
+receipts and prevents paid-state regressions. Durable jobs and exception records
+support recovery; public webhook delivery still needs an HTTPS integration test. Checkpoint 6 must issue credentials with reviewed
 encryption/key management and unique fulfillment. Checkpoint 8 supplies the CheckIn
 record and admission authorization. Guest order APIs require a private browser credential.
 
