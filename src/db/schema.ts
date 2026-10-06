@@ -352,3 +352,31 @@ export const reservations = pgTable(
     check("reservation_quantity", sql`${t.quantity} > 0`),
   ],
 );
+
+// One attempt per order for the initialization-only checkpoint. Reconciliation
+// must resolve ambiguous attempts before a future implementation enables retries.
+export const paymentInitializations = pgTable(
+  "payment_initializations",
+  {
+    orderId: uuid("order_id")
+      .primaryKey()
+      .references(() => orders.id),
+    paymentId: uuid("payment_id")
+      .notNull()
+      .unique()
+      .references(() => payments.id),
+    state: text("state").notNull().default("initializing"),
+    authorizationUrl: text("authorization_url"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check(
+      "payment_initialization_state",
+      sql`${t.state} in ('initializing','ready','unknown')`,
+    ),
+    check(
+      "payment_initialization_url",
+      sql`(${t.state} = 'ready') = (${t.authorizationUrl} is not null)`,
+    ),
+  ],
+);

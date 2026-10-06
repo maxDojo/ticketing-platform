@@ -95,3 +95,12 @@ edge controls, monitoring, and a production security review remain launch gates.
   alerts, buyer-data retention/deletion and recovery remain deployment gates.
 - No payment confirmation or admission issuance is exposed; even zero-price orders
   remain pending. See [checkout operations](checkout.md) for limits and tests.
+
+## Payment initialization review step
+
+Paystack checkout initialization is opt-in and test-only. Live credentials are
+rejected. Saved order amounts, guest authorization, durable single-attempt records,
+provider URL/reference validation and bounded requests protect this initial path.
+Ambiguous outcomes block new attempts; returns never mark an order paid. Customer
+payments remain disabled pending verification, recovery and the remaining launch
+gates. See [payment setup](payments.md).

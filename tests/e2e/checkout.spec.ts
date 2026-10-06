@@ -80,6 +80,49 @@ test("guest checkout reserves exact inventory, survives reload, protects access 
       path: test.info().outputPath("reservation.png"),
       fullPage: true,
     });
+    // Exercise the redirect UI with an intercepted response; no real provider call.
+    await page.route(`**/api/orders/${order.id}/payment`, (route) =>
+      route.fulfill({
+        json: { authorizationUrl: "https://checkout.paystack.com/synthetic" },
+      }),
+    );
+    await page.route("https://checkout.paystack.com/synthetic", (route) =>
+      route.fulfill({
+        contentType: "text/html",
+        body: "<h1>Mock Paystack checkout</h1>",
+      }),
+    );
+    await page
+      .getByRole("button", { name: "Continue to Paystack (test)", exact: true })
+      .click();
+    await expect(page).toHaveURL("https://checkout.paystack.com/synthetic");
+    await page.goto("/payments/return?reference=forged&status=success");
+    await expect(
+      page.getByText("This return does not confirm payment.", { exact: false }),
+    ).toBeVisible();
+    expect(
+      (await context.request.get(`/api/orders/${order.id}`)).status(),
+    ).toBe(200);
+    await page.goto(`/checkout/${slug}`);
+    await expect(
+      page.getByRole("heading", { name: "Tickets reserved", exact: true }),
+    ).toBeVisible();
+    expect(
+      (
+        await context.request.post(`/api/orders/${order.id}/payment`, {
+          data: { amount: 1 },
+          headers: { Origin: origin },
+        })
+      ).status(),
+    ).toBe(400);
+    expect(
+      (
+        await context.request.post(`/api/orders/${order.id}/payment`, {
+          data: {},
+          headers: { Origin: "https://evil.example" },
+        })
+      ).status(),
+    ).toBe(403);
     const payload = response.request().postDataJSON();
     const retried = await context.request.post("/api/orders", {
       data: payload,

@@ -14,6 +14,10 @@ export default defineConfig({
     command: "pnpm exec next start --hostname 127.0.0.1 --port 3100",
     url: "http://127.0.0.1:3100",
     reuseExistingServer: false,
-    env: { APP_URL: "http://127.0.0.1:3100" },
+    env: {
+      APP_URL: "http://127.0.0.1:3100",
+      PAYSTACK_MODE: "test",
+      PAYSTACK_SECRET_KEY: "sk_test_syntheticbrowserfixture123",
+    },
   },
 });
