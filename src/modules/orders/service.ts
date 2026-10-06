@@ -38,7 +38,7 @@ async function summary(db: PoolClient, id: string) {
   const {
     rows: [o],
   } = await db.query(
-    "SELECT id, reference, status, currency, subtotal::text, discount::text, fees::text, total::text, reservation_expires_at, clock_timestamp() AS server_now, EXISTS (SELECT 1 FROM payments p WHERE p.order_id=orders.id) AS payment_started FROM orders WHERE id=$1",
+    "SELECT id, reference, status, (SELECT slug FROM events e WHERE e.id=orders.event_id) AS event_slug, currency, subtotal::text, discount::text, fees::text, total::text, reservation_expires_at, clock_timestamp() AS server_now, EXISTS (SELECT 1 FROM payments p WHERE p.order_id=orders.id) AS payment_started, (SELECT p.provider_reference FROM payments p WHERE p.order_id=orders.id ORDER BY p.created_at DESC,p.id DESC LIMIT 1) AS payment_reference, (SELECT p.status FROM payments p WHERE p.order_id=orders.id ORDER BY p.created_at DESC,p.id DESC LIMIT 1) AS payment_status, EXISTS (SELECT 1 FROM payment_jobs j JOIN payments p ON p.id=j.payment_id WHERE p.order_id=orders.id AND j.state='attention') AS payment_attention FROM orders WHERE id=$1",
     [id],
   );
   const { rows: items } = await db.query(
@@ -47,7 +47,7 @@ async function summary(db: PoolClient, id: string) {
   );
   return { ...o, items };
 }
-async function release(
+export async function release(
   db: PoolClient,
   id: string,
   state: "expired" | "cancelled",
@@ -247,8 +247,12 @@ export async function accessOrder(
     if (!o) throw new OrderError(404, "Order not found.");
     if (
       cancel &&
-      (await db.query("SELECT 1 FROM payments WHERE order_id=$1 LIMIT 1", [id]))
-        .rowCount
+      (
+        await db.query(
+          "SELECT 1 FROM payments WHERE order_id=$1 AND status<>'failed' LIMIT 1",
+          [id],
+        )
+      ).rowCount
     )
       throw new OrderError(
         409,

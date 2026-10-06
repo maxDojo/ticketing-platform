@@ -104,3 +104,27 @@ provider URL/reference validation and bounded requests protect this initial path
 Ambiguous outcomes block new attempts; returns never mark an order paid. Customer
 payments remain disabled pending verification, recovery and the remaining launch
 gates. See [payment setup](payments.md).
+
+## Payment verification review step
+
+- Webhooks require raw-byte HMAC-SHA512 verification and bounded payloads. Durable
+  receipts/jobs are committed before acknowledgment; raw provider payloads are not retained.
+- Verification uses a fixed provider endpoint and checks the reference, test domain,
+  currency and exact saved amount. Guest references do not authorize access alone.
+- Confirmation atomically records payment, fees and one fulfillment and moves inventory;
+  successful payments and paid orders cannot regress to unpaid states.
+- Worker leases, backoff, missed-job recovery and attention escalation protect against
+  crashes and ambiguous outcomes. Rechecks require organizer MFA and ownership.
+- Late inventory failures and duplicate successful charges are recorded for manual review;
+  no automatic refund or ticket issuance is claimed.
+- Test-account recovery verified. Public webhook delivery, worker supervision, incident
+  alerts, retention, refund operations and production readiness remain launch gates.
+
+### Dependency audit blocker (2026-10-06)
+
+The final audit reports GHSA-vfj7-8cjw-p6xm in `braces@3.0.3`, pulled by the
+Next.js ESLint plugin through fast-glob and micromatch. The registry currently
+reports 3.0.3 as latest and does not resolve the audit's recommended 3.0.4.
+Keep this checkpoint in draft until a patched dependency is available or a
+reviewed remediation is implemented; the audit remains enabled and failing.
+The separate source-map-js advisory was resolved by updating to 1.2.2.

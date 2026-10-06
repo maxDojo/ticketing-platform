@@ -48,18 +48,21 @@ export async function initializePayment(
     const {
       rows: [existing],
     } = await db.query(
-      "SELECT state,authorization_url FROM payment_initializations WHERE order_id=$1",
+      "SELECT i.state,i.authorization_url,p.status AS payment_status,p.verified_at FROM payment_initializations i JOIN payments p ON p.id=i.payment_id WHERE i.order_id=$1",
       [id],
     );
-    if (existing) {
+    const retryFailed =
+      existing?.payment_status === "failed" && !!existing.verified_at;
+    if (existing && !retryFailed) {
       if (existing.state === "ready")
         return { url: checkoutUrl(existing.authorization_url) };
       throw new OrderError(
         409,
-        "Payment initialization is unresolved. Do not start another payment; review this attempt in Paystack test mode.",
+        "Payment initialization is unresolved. Use Check payment status; do not start another payment.",
       );
     }
     if (
+      !retryFailed &&
       (await db.query("SELECT 1 FROM payments WHERE order_id=$1 LIMIT 1", [id]))
         .rowCount
     )
@@ -72,10 +75,15 @@ export async function initializePayment(
       [id, reference, o.total],
     );
     await db.query(
-      "INSERT INTO payment_initializations (order_id,payment_id) VALUES ($1,$2)",
+      "INSERT INTO payment_initializations (order_id,payment_id) VALUES ($1,$2) ON CONFLICT (order_id) DO UPDATE SET payment_id=EXCLUDED.payment_id,state='initializing',authorization_url=NULL,created_at=now()",
       [id, p.id],
     );
+    await db.query(
+      "INSERT INTO payment_jobs (payment_id,next_attempt_at) VALUES ($1,now()+interval '30 seconds')",
+      [p.id],
+    );
     return {
+      paymentId: p.id as string,
       reference,
       amount: String(o.total),
       email: String(o.buyer_email),
@@ -88,18 +96,23 @@ export async function initializePayment(
     url = checkoutUrl(await gateway(attempt));
   } catch {
     await pool.query(
-      "UPDATE payment_initializations SET state='unknown' WHERE order_id=$1 AND state='initializing'",
-      [id],
+      "UPDATE payment_initializations SET state='unknown' WHERE order_id=$1 AND state='initializing' AND payment_id=$2",
+      [id, attempt.paymentId],
     );
     throw new OrderError(
       503,
-      "Payment initialization could not be confirmed. Do not start another payment; review this attempt in Paystack test mode.",
+      "Payment initialization could not be confirmed. Verification is queued; use Check payment status before trying again.",
     );
   }
-  await pool.query(
-    "UPDATE payment_initializations SET state='ready',authorization_url=$2 WHERE order_id=$1 AND state='initializing'",
-    [id, url],
+  const saved = await pool.query(
+    "UPDATE payment_initializations SET state='ready',authorization_url=$2 WHERE order_id=$1 AND state='initializing' AND payment_id=$3",
+    [id, url, attempt.paymentId],
   );
+  if (saved.rowCount !== 1)
+    throw new OrderError(
+      409,
+      "This attempt was superseded. Check your payment status.",
+    );
   // Expiry or cancellation can win while the network request is in flight.
   const {
     rows: [current],

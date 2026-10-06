@@ -26,7 +26,9 @@
     "test:integration": "vitest run --config vitest.integration.config.mts",
     "organizer:create": "tsx scripts/create-organizer.ts",
     "orders:expire": "tsx scripts/expire-orders.ts",
-    "orders:worker": "tsx scripts/expire-orders.ts --watch"
+    "orders:worker": "tsx scripts/expire-orders.ts --watch",
+    "payments:verify": "tsx scripts/verify-payments.ts",
+    "payments:worker": "tsx scripts/verify-payments.ts --watch"
   },
   "dependencies": {
     "@js-temporal/polyfill": "0.5.1",

@@ -1,19 +1,26 @@
-import Link from "next/link";
-export default function PaymentReturn() {
-  // Provider query parameters are untrusted and confer no order access.
+import { connection } from "next/server";
+import { PaymentStatus } from "@/components/payments/status";
+export default async function PaymentReturn({
+  searchParams,
+}: {
+  searchParams: Promise<{ reference?: string }>;
+}) {
+  await connection();
+  const { reference } = await searchParams;
+  const safe =
+    typeof reference === "string" && /^[A-Za-z0-9.=-]{1,100}$/.test(reference)
+      ? reference
+      : null;
+  // No order lookup during cross-site navigation. The client makes a same-origin,
+  // cookie-authenticated POST; the URL reference alone grants no access.
   return (
     <main id="main" className="workspace stack">
       <p className="eyebrow">Paystack test checkout</p>
-      <h1>Return received</h1>
       <p>
-        This return does not confirm payment. Automatic verification is the next
-        implementation step; no tickets have been issued.
+        This return does not confirm payment. Only server verification can do
+        that.
       </p>
-      <p>
-        Review this test transaction in your Paystack dashboard. Do not repeat
-        payment because confirmation is unavailable here.
-      </p>
-      <Link href="/">Back to TicketSquare</Link>
+      <PaymentStatus reference={safe} />
     </main>
   );
 }

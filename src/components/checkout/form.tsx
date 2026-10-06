@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { formatMoney } from "@/modules/events/validation";
 type TicketOption = {
@@ -15,6 +16,9 @@ type Summary = {
   reference: string;
   status: string;
   payment_started: boolean;
+  payment_reference: string | null;
+  payment_status: string | null;
+  payment_attention: boolean;
   total: string;
   currency: string;
   reservation_expires_at: string;
@@ -209,13 +213,17 @@ export function CheckoutForm({
       {order ? (
         <section className="panel stack">
           <h2>
-            {order.status === "pending"
-              ? "Tickets reserved"
-              : order.status === "expired"
-                ? "Reservation expired"
-                : order.status === "cancelled"
-                  ? "Reservation cancelled"
-                  : "Order status"}
+            {order.status === "paid"
+              ? "Payment confirmed"
+              : order.status === "payment_exception" || order.payment_attention
+                ? "Payment needs attention"
+                : order.status === "pending"
+                  ? "Tickets reserved"
+                  : order.status === "expired"
+                    ? "Reservation expired"
+                    : order.status === "cancelled"
+                      ? "Reservation cancelled"
+                      : "Order status"}
           </h2>
           <p>Reference: {order.reference}</p>
           {order.status === "pending" && (
@@ -238,10 +246,21 @@ export function CheckoutForm({
           <p className="price">Total: {formatMoney(BigInt(order.total))}</p>
           <p>
             {order.payment_started
-              ? "A test payment was started. Verification is not implemented yet; check Paystack before trying again. No tickets have been issued."
+              ? order.status === "paid"
+                ? "Your test payment is confirmed and inventory is secured. Ticket issuance is not available yet."
+                : "A test payment was started. Check its status before trying again. No tickets have been issued."
               : "No payment has been started and no tickets have been issued."}
           </p>
+          {order.payment_reference && (
+            <Link
+              className="button secondary"
+              href={`/payments/return?reference=${encodeURIComponent(order.payment_reference)}`}
+            >
+              Check payment status
+            </Link>
+          )}
           {testPaymentsEnabled &&
+            !order.payment_attention &&
             order.status === "pending" &&
             BigInt(order.total) > 0n && (
               <button
@@ -251,9 +270,11 @@ export function CheckoutForm({
               >
                 {busy
                   ? "Please wait…"
-                  : order.payment_started
-                    ? "Resume Paystack test checkout"
-                    : "Continue to Paystack (test)"}
+                  : order.payment_status === "failed"
+                    ? "Retry Paystack test payment"
+                    : order.payment_started
+                      ? "Resume Paystack test checkout"
+                      : "Continue to Paystack (test)"}
               </button>
             )}
           {testPaymentsEnabled && (
@@ -265,12 +286,16 @@ export function CheckoutForm({
           {order.status === "pending" ? (
             <button
               className="button secondary"
-              disabled={busy || order.payment_started}
+              disabled={
+                busy ||
+                (order.payment_started && order.payment_status !== "failed")
+              }
               onClick={cancel}
             >
               Cancel reservation
             </button>
-          ) : (
+          ) : ["expired", "cancelled"].includes(order.status) &&
+            !order.payment_started ? (
             <button
               className="button"
               onClick={() => {
@@ -281,7 +306,7 @@ export function CheckoutForm({
             >
               Choose tickets again
             </button>
-          )}
+          ) : null}
         </section>
       ) : (
         <form onSubmit={submit} className="public-layout">

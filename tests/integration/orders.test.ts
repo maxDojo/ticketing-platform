@@ -466,3 +466,441 @@ it("preserves uncertain attempts and denies cross-guest, zero-price and expired 
   ).rejects.toMatchObject({ status: 409 });
   expect(calls).toBe(1);
 });
+
+async function paymentFixture(capacity = 10) {
+  const f = await fixture(capacity);
+  const order = await createOrder(pool, f.guest, f.input);
+  const { initializePayment } =
+    await import("../../src/modules/payments/service");
+  await initializePayment(
+    pool,
+    f.guest,
+    order.id,
+    "http://localhost:3000",
+    async () => "https://checkout.paystack.com/synthetic",
+  );
+  const p = (
+    await pool.query("SELECT * FROM payments WHERE order_id=$1", [order.id])
+  ).rows[0];
+  return {
+    ...f,
+    order,
+    p,
+    verified: {
+      reference: p.provider_reference,
+      domain: "test",
+      status: "success",
+      currency: "NGN",
+      amount: Number(p.expected_amount),
+      fees: 100,
+    },
+  };
+}
+it("confirms duplicates concurrently exactly once and cannot regress paid state", async () => {
+  const { confirmPayment } =
+    await import("../../src/modules/payments/confirmation");
+  const f = await paymentFixture();
+  await Promise.all(
+    Array.from({ length: 8 }, () => confirmPayment(pool, f.p.id, f.verified)),
+  );
+  expect((await accessOrder(pool, f.guest, f.order.id)).status).toBe("paid");
+  expect(await inventory(f.types[0].id)).toEqual({
+    reserved_units: 0,
+    sold_units: 1,
+  });
+  await confirmPayment(pool, f.p.id, { ...f.verified, status: "failed" });
+  expect((await accessOrder(pool, f.guest, f.order.id)).status).toBe("paid");
+  expect(
+    (
+      await pool.query(
+        "SELECT count(*)::int AS n FROM payment_fulfillments WHERE order_id=$1",
+        [f.order.id],
+      )
+    ).rows[0].n,
+  ).toBe(1);
+  expect(
+    (
+      await pool.query(
+        "SELECT provider_fees::text AS fees FROM payments WHERE id=$1",
+        [f.p.id],
+      )
+    ).rows[0].fees,
+  ).toBe("100");
+  await expect(
+    pool.query("UPDATE payments SET status='failed' WHERE id=$1", [f.p.id]),
+  ).rejects.toMatchObject({ code: "23514" });
+  await expect(
+    pool.query("UPDATE orders SET status='expired' WHERE id=$1", [f.order.id]),
+  ).rejects.toMatchObject({ code: "23514" });
+});
+it("serializes confirmation against expiry and reacquires released stock without overselling", async () => {
+  const { confirmPayment } =
+    await import("../../src/modules/payments/confirmation");
+  const f = await paymentFixture(1);
+  await ageOrder(f.order.id);
+  await Promise.all([
+    expireReservations(pool),
+    confirmPayment(pool, f.p.id, f.verified),
+  ]);
+  expect((await accessOrder(pool, f.guest, f.order.id)).status).toBe("paid");
+  expect(await inventory(f.types[0].id)).toEqual({
+    reserved_units: 0,
+    sold_units: 1,
+  });
+  expect(
+    (
+      await pool.query("SELECT state FROM reservations WHERE order_id=$1", [
+        f.order.id,
+      ])
+    ).rows.every((r) => r.state === "committed"),
+  ).toBe(true);
+});
+it("records paid-but-unfulfilled late payments without stealing another buyer's stock", async () => {
+  const { confirmPayment } =
+    await import("../../src/modules/payments/confirmation");
+  const f = await paymentFixture(1);
+  await ageOrder(f.order.id);
+  await expireReservations(pool);
+  await createOrder(pool, "another-guest", {
+    ...f.input,
+    requestKey: randomUUID(),
+  });
+  expect(await confirmPayment(pool, f.p.id, f.verified)).toBe("attention");
+  expect((await accessOrder(pool, f.guest, f.order.id)).status).toBe(
+    "payment_exception",
+  );
+  expect(await inventory(f.types[0].id)).toEqual({
+    reserved_units: 1,
+    sold_units: 0,
+  });
+  expect(
+    (await pool.query("SELECT status FROM payments WHERE id=$1", [f.p.id]))
+      .rows[0].status,
+  ).toBe("succeeded");
+  expect(
+    (
+      await pool.query(
+        "SELECT reason FROM payment_exceptions WHERE payment_id=$1",
+        [f.p.id],
+      )
+    ).rows[0].reason,
+  ).toBe("inventory_unavailable");
+});
+it("rejects wrong amount, currency, reference or mode, releases holds and permits no tickets", async () => {
+  const { confirmPayment } =
+    await import("../../src/modules/payments/confirmation");
+  for (const patch of [
+    { amount: 1 },
+    { currency: "USD" },
+    { reference: "wrong-reference" },
+    { domain: "live" },
+  ]) {
+    const f = await paymentFixture();
+    expect(
+      await confirmPayment(pool, f.p.id, { ...f.verified, ...patch }),
+    ).toBe("attention");
+    expect((await accessOrder(pool, f.guest, f.order.id)).status).toBe(
+      "payment_exception",
+    );
+    expect(await inventory(f.types[0].id)).toEqual({
+      reserved_units: 0,
+      sold_units: 0,
+    });
+    expect(
+      (
+        await pool.query(
+          "SELECT count(*)::int AS n FROM tickets WHERE order_id=$1",
+          [f.order.id],
+        )
+      ).rows[0].n,
+    ).toBe(0);
+  }
+});
+it("routes cancelled events to review and records excess successful payments only once", async () => {
+  const { confirmPayment } =
+    await import("../../src/modules/payments/confirmation");
+  const cancelled = await paymentFixture();
+  await pool.query("UPDATE events SET status='cancelled' WHERE id=$1", [
+    cancelled.event.id,
+  ]);
+  expect(await confirmPayment(pool, cancelled.p.id, cancelled.verified)).toBe(
+    "attention",
+  );
+  expect(await inventory(cancelled.types[0].id)).toEqual({
+    reserved_units: 0,
+    sold_units: 0,
+  });
+  const f = await paymentFixture();
+  await confirmPayment(pool, f.p.id, f.verified);
+  const reference = `ts-test-${randomUUID()}`;
+  const p = (
+    await pool.query(
+      "INSERT INTO payments (order_id,provider_reference,expected_amount,currency) VALUES ($1,$2,$3,'NGN') RETURNING id",
+      [f.order.id, reference, f.p.expected_amount],
+    )
+  ).rows[0];
+  await Promise.all([
+    confirmPayment(pool, p.id, { ...f.verified, reference }),
+    confirmPayment(pool, p.id, { ...f.verified, reference }),
+  ]);
+  expect(await inventory(f.types[0].id)).toEqual({
+    reserved_units: 0,
+    sold_units: 1,
+  });
+  expect(
+    (
+      await pool.query(
+        "SELECT count(*)::int AS n FROM payment_exceptions WHERE payment_id=$1 AND reason='excess_payment'",
+        [p.id],
+      )
+    ).rows[0].n,
+  ).toBe(1);
+});
+it("durably deduplicates signed raw webhooks, rejects tampering, and queues no foreign references", async () => {
+  const { acceptWebhook } = await import("../../src/modules/payments/webhook");
+  const { createHmac } = await import("node:crypto");
+  const f = await paymentFixture();
+  const secret = "sk_test_syntheticwebhook123";
+  const body = Buffer.from(
+    JSON.stringify({
+      event: "charge.success",
+      data: { reference: f.p.provider_reference, domain: "test" },
+    }),
+  );
+  const signature = createHmac("sha512", secret).update(body).digest("hex");
+  await Promise.all([
+    acceptWebhook(pool, body, signature, secret),
+    acceptWebhook(pool, body, signature, secret),
+  ]);
+  expect(
+    (
+      await pool.query(
+        "SELECT count(*)::int AS n FROM payment_webhook_receipts WHERE payment_id=$1",
+        [f.p.id],
+      )
+    ).rows[0].n,
+  ).toBe(1);
+  await expect(
+    acceptWebhook(
+      pool,
+      Buffer.concat([body, Buffer.from(" ")]),
+      signature,
+      secret,
+    ),
+  ).rejects.toMatchObject({ status: 401 });
+  await expect(acceptWebhook(pool, body, "zz", secret)).rejects.toMatchObject({
+    status: 401,
+  });
+  expect((await accessOrder(pool, f.guest, f.order.id)).status).toBe("pending");
+  const foreign = Buffer.from(
+    JSON.stringify({
+      event: "charge.success",
+      data: { reference: "other-application", domain: "test" },
+    }),
+  );
+  await acceptWebhook(
+    pool,
+    foreign,
+    createHmac("sha512", secret).update(foreign).digest("hex"),
+    secret,
+  );
+});
+it("queues guest verification only for its owner", async () => {
+  const { requestGuestVerification } =
+    await import("../../src/modules/payments/guest");
+  const f = await paymentFixture();
+  await expect(
+    requestGuestVerification(pool, "wrong-guest", f.p.provider_reference),
+  ).rejects.toMatchObject({ status: 404 });
+  expect(
+    (await requestGuestVerification(pool, f.guest, f.p.provider_reference)).id,
+  ).toBe(f.order.id);
+});
+it("recovers a crashed worker lease and retries outages without changing inventory", async () => {
+  const { processPaymentJobs } =
+    await import("../../src/modules/payments/jobs");
+  const f = await paymentFixture();
+  // Keep unrelated fixtures out of this deterministic worker batch.
+  await pool.query(
+    "UPDATE payment_jobs SET next_attempt_at=now()+interval '1 day'",
+  );
+  await pool.query(
+    "UPDATE payment_jobs SET next_attempt_at=now(),lease_id=$2,lease_expires_at=now()+interval '1 minute' WHERE payment_id=$1",
+    [f.p.id, randomUUID()],
+  );
+  expect(await processPaymentJobs(pool, async () => f.verified, 1)).toBe(0);
+  await pool.query(
+    "UPDATE payment_jobs SET lease_expires_at=now()-interval '1 second' WHERE payment_id=$1",
+    [f.p.id],
+  );
+  expect(
+    await processPaymentJobs(
+      pool,
+      async () => {
+        throw new Error("provider down");
+      },
+      1,
+    ),
+  ).toBe(1);
+  expect((await accessOrder(pool, f.guest, f.order.id)).status).toBe("pending");
+  expect(
+    (
+      await pool.query(
+        "SELECT state,last_outcome FROM payment_jobs WHERE payment_id=$1",
+        [f.p.id],
+      )
+    ).rows[0],
+  ).toEqual({ state: "pending", last_outcome: "retry" });
+  await pool.query(
+    "UPDATE payment_jobs SET next_attempt_at=now() WHERE payment_id=$1",
+    [f.p.id],
+  );
+  await processPaymentJobs(pool, async () => f.verified, 1);
+  expect((await accessOrder(pool, f.guest, f.order.id)).status).toBe("paid");
+});
+it("does not lose a webhook signal received during a pending verification", async () => {
+  const { processPaymentJobs } =
+    await import("../../src/modules/payments/jobs");
+  const { acceptWebhook } = await import("../../src/modules/payments/webhook");
+  const { createHmac } = await import("node:crypto");
+  const f = await paymentFixture();
+  await pool.query(
+    "UPDATE payment_jobs SET next_attempt_at=now()+interval '1 day'",
+  );
+  await pool.query(
+    "UPDATE payment_jobs SET next_attempt_at=now() WHERE payment_id=$1",
+    [f.p.id],
+  );
+  const secret = "sk_test_syntheticwebhook123";
+  const body = Buffer.from(
+    JSON.stringify({
+      event: "charge.success",
+      data: { reference: f.p.provider_reference, domain: "test" },
+    }),
+  );
+  await processPaymentJobs(
+    pool,
+    async () => {
+      await acceptWebhook(
+        pool,
+        body,
+        createHmac("sha512", secret).update(body).digest("hex"),
+        secret,
+      );
+      return { ...f.verified, status: "pending" };
+    },
+    1,
+  );
+  expect(
+    (
+      await pool.query(
+        "SELECT state,next_attempt_at<=now() AS due FROM payment_jobs WHERE payment_id=$1",
+        [f.p.id],
+      )
+    ).rows[0],
+  ).toEqual({ state: "pending", due: true });
+  await processPaymentJobs(pool, async () => f.verified, 1);
+  expect((await accessOrder(pool, f.guest, f.order.id)).status).toBe("paid");
+});
+it("allows a new attempt after verified failure and records a later second success as excess", async () => {
+  const { confirmPayment } =
+    await import("../../src/modules/payments/confirmation");
+  const { initializePayment } =
+    await import("../../src/modules/payments/service");
+  const f = await paymentFixture();
+  await confirmPayment(pool, f.p.id, { ...f.verified, status: "failed" });
+  await initializePayment(
+    pool,
+    f.guest,
+    f.order.id,
+    "http://localhost:3000",
+    async () => "https://checkout.paystack.com/retry",
+  );
+  const retry = (
+    await pool.query("SELECT * FROM payments WHERE order_id=$1 AND id<>$2", [
+      f.order.id,
+      f.p.id,
+    ])
+  ).rows[0];
+  await confirmPayment(pool, retry.id, {
+    ...f.verified,
+    reference: retry.provider_reference,
+  });
+  await confirmPayment(pool, f.p.id, f.verified);
+  expect(await inventory(f.types[0].id)).toEqual({
+    reserved_units: 0,
+    sold_units: 1,
+  });
+  expect(
+    (
+      await pool.query(
+        "SELECT reason FROM payment_exceptions WHERE payment_id=$1",
+        [f.p.id],
+      )
+    ).rows[0].reason,
+  ).toBe("excess_payment");
+});
+
+it("rolls back payment and inventory together if fulfillment persistence fails", async () => {
+  const { confirmPayment } =
+    await import("../../src/modules/payments/confirmation");
+  const f = await paymentFixture();
+  await pool.query(
+    "CREATE FUNCTION test_fail_fulfillment() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic failure'; END $$",
+  );
+  await pool.query(
+    `CREATE TRIGGER test_fail_fulfillment BEFORE INSERT ON payment_fulfillments FOR EACH ROW WHEN (NEW.order_id='${f.order.id}'::uuid) EXECUTE FUNCTION test_fail_fulfillment()`,
+  );
+  try {
+    await expect(confirmPayment(pool, f.p.id, f.verified)).rejects.toThrow();
+    expect(await inventory(f.types[0].id)).toEqual({
+      reserved_units: 1,
+      sold_units: 0,
+    });
+    expect(
+      (await pool.query("SELECT status FROM payments WHERE id=$1", [f.p.id]))
+        .rows[0].status,
+    ).toBe("initialized");
+  } finally {
+    await pool.query(
+      "DROP TRIGGER test_fail_fulfillment ON payment_fulfillments",
+    );
+    await pool.query("DROP FUNCTION test_fail_fulfillment()");
+  }
+  expect(await confirmPayment(pool, f.p.id, f.verified)).toBe("confirmed");
+});
+it("escalates exhausted verification retries instead of silently dropping the payment", async () => {
+  const { processPaymentJobs } =
+    await import("../../src/modules/payments/jobs");
+  const f = await paymentFixture();
+  await pool.query(
+    "UPDATE payment_jobs SET next_attempt_at=now()+interval '1 day'",
+  );
+  await pool.query(
+    "UPDATE payment_jobs SET attempts=23,next_attempt_at=now() WHERE payment_id=$1",
+    [f.p.id],
+  );
+  await processPaymentJobs(
+    pool,
+    async () => {
+      throw new Error("provider unavailable");
+    },
+    1,
+  );
+  expect(
+    (
+      await pool.query("SELECT state FROM payment_jobs WHERE payment_id=$1", [
+        f.p.id,
+      ])
+    ).rows[0].state,
+  ).toBe("attention");
+  expect(
+    (
+      await pool.query(
+        "SELECT reason FROM payment_exceptions WHERE payment_id=$1",
+        [f.p.id],
+      )
+    ).rows[0].reason,
+  ).toBe("verification_unresolved");
+  expect((await accessOrder(pool, f.guest, f.order.id)).status).toBe("pending");
+});

@@ -2,8 +2,9 @@
 
 Published event pages now link to `/checkout/<slug>`. Guests can select multiple
 categories from one event, enter a name/email and optional phone, and reserve
-inventory. There is no Paystack integration, payment confirmation, ticket issuance,
-promo redemption, fee calculation, or email delivery yet. Even a zero-price order
+inventory. Test-only Paystack integration and payment confirmation are now available; see
+[payment operations](payments.md). Ticket issuance, promo redemption and email
+delivery remain unavailable. Buyer fees remain zero. Even a zero-price order
 remains pending and grants no admission in this checkpoint. Use synthetic buyer
 details while testing locally.
 
@@ -83,10 +84,8 @@ runtime credentials cannot delete them or reassign guest identities. Deadlock an
 serialization failures retry up to twice; lock waits are bounded. A failed batch
 can leave earlier orders released and is safe to rerun.
 
-Payment confirmation must use the same lock ordering. The future late-payment
-path must explicitly reacquire stock or record an unfulfilled payment exception;
-it must not silently convert a released hold into a valid admission. `committed`
-reservation state is reserved for that future integration.
+Payment confirmation uses the same order-first lock ordering. The late-payment path reacquires stock or records an unfulfilled payment exception.
+Reservations become `committed` only after a verified payment and unique fulfillment.
 
 ## Verification
 

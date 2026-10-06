@@ -50,6 +50,20 @@
       "when": 1790641129525,
       "tag": "0006_payment_initialization",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791297275312,
+      "tag": "0007_payment_verification",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791297275951,
+      "tag": "0008_payment_verification_guards",
+      "breakpoints": true
     }
   ]
 }
