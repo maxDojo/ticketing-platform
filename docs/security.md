@@ -120,11 +120,22 @@ gates. See [payment setup](payments.md).
 - Test-account recovery verified. Public webhook delivery, worker supervision, incident
   alerts, retention, refund operations and production readiness remain launch gates.
 
-### Dependency audit blocker (2026-10-06)
+### Temporary dependency audit exception (review by 2026-10-20)
 
 The final audit reports GHSA-vfj7-8cjw-p6xm in `braces@3.0.3`, pulled by the
 Next.js ESLint plugin through fast-glob and micromatch. The registry currently
 reports 3.0.3 as latest and does not resolve the audit's recommended 3.0.4.
-Keep this checkpoint in draft until a patched dependency is available or a
-reviewed remediation is implemented; the audit remains enabled and failing.
+The reviewed dependency path is development-only. The plugin calls fast-glob
+for a custom `settings.next.rootDir` pattern; our ESLint configuration does not
+set that option, and no buyer input reaches this lint configuration.
+
+`pnpm audit:deps` first runs the production audit with no exceptions, then the
+full audit with only this advisory excluded until 2026-10-20 (UTC). After that
+date the full audit runs without the exception automatically. Registry errors
+and every other advisory still fail the command. This is a temporary acceptance
+of the assessed development-tool exposure, not a patch to braces.
+
+Review this exception when changing the lint configuration or dependency path.
+Remove it as soon as a patched release is available; the project maintainer owns
+the review. Use `pnpm audit --audit-level=low` to see the unfiltered report.
 The separate source-map-js advisory was resolved by updating to 1.2.2.
