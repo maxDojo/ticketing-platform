@@ -28,14 +28,15 @@
     "orders:expire": "tsx scripts/expire-orders.ts",
     "orders:worker": "tsx scripts/expire-orders.ts --watch",
     "payments:verify": "tsx scripts/verify-payments.ts",
-    "payments:worker": "tsx scripts/verify-payments.ts --watch"
+    "payments:worker": "tsx scripts/verify-payments.ts --watch",
+    "payments:webhook-proxy": "tsx scripts/webhook-test-proxy.ts"
   },
   "dependencies": {
     "@js-temporal/polyfill": "0.5.1",
-    "@next/env": "16.3.6",
+    "@next/env": "16.3.8",
     "better-auth": "1.7.6",
     "drizzle-orm": "0.45.3",
-    "next": "16.3.6",
+    "next": "16.3.8",
     "pg": "8.23.0",
     "qrcode": "1.5.4",
     "react": "19.3.0",
@@ -53,7 +54,7 @@
     "@types/react-dom": "19.3.0",
     "drizzle-kit": "0.31.11",
     "eslint": "9.39.5",
-    "eslint-config-next": "16.3.6",
+    "eslint-config-next": "16.3.8",
     "otpauth": "9.5.2",
     "prettier": "3.9.9",
     "tailwindcss": "4.3.3",

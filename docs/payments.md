@@ -57,6 +57,26 @@ Never expose the entire development server, admin pages, or database for this te
 Actual external webhook delivery remains unverified until that check is completed.
 See [Paystack's webhook documentation](https://paystack.com/docs/payments/webhooks/).
 
+### Prepared local proxy
+
+`pnpm payments:webhook-proxy` starts a loopback-only listener on port 3400; it
+does not start a public tunnel. It requires test-mode credentials and forwards
+only the exact `POST /api/paystack/webhook` path to `127.0.0.1:3000` after checking
+the raw-body HMAC signature. Query strings, other paths and methods are rejected.
+Bodies are limited to 64 KB and five seconds; upstream requests have a ten-second
+timeout. Cookies, authorization and incoming proxy headers are not forwarded.
+Upstream response bodies, cookies and redirects are never exposed. Only an upstream
+200 is acknowledged; other results return 502 so delivery can be retried.
+
+After approval, point a temporary HTTPS tunnel at port **3400**, never port 3000.
+The tunnel provider terminates HTTPS and can see webhook data in transit; use only
+synthetic buyer details and Paystack test transactions. Configure only the Paystack
+test webhook URL, leaving live settings untouched. To demonstrate webhook delivery
+independently of the reconciliation worker, check that a receipt exists for the
+new reference before running verification. Then confirm the paid order, fee and
+single inventory commitment. Remove the test webhook URL and stop both the tunnel
+and proxy after the check. This utility is not production ingress or rate limiting.
+
 ## Durable verification and reconciliation
 
 Initialization saves a payment reference and a job before contacting Paystack.
