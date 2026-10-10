@@ -127,4 +127,4 @@ receipts and prevents paid-state regressions. Durable jobs and exception records
 support recovery; public webhook delivery passed its HTTPS integration test on 2026-10-10. Checkpoint 6 now issues encrypted test credentials and independent admissions; see [ticket operations](tickets.md). Checkpoint 8 supplies the CheckIn
 record and admission authorization. Guest order APIs require a private browser credential.
 
-Ticket credentials use SHA-256 verifiers and AES-256-GCM envelopes with dedicated key identifiers. Issuance remains test-only. Production key management, delivery/retrieval beyond the checkout browser and gate check-in remain launch requirements.
+Ticket credentials use SHA-256 verifiers and AES-256-GCM envelopes with dedicated key identifiers. Issuance remains test-only. Local delivery previews now support recovery beyond the checkout browser; see [delivery operations](delivery.md). Production key management, external email delivery and gate check-in remain launch requirements.

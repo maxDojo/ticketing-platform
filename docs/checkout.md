@@ -3,8 +3,7 @@
 Published event pages now link to `/checkout/<slug>`. Guests can select multiple
 categories from one event, enter a name/email and optional phone, and reserve
 inventory. Test-only Paystack integration and payment confirmation are now available; see
-[payment operations](payments.md). Ticket issuance, promo redemption and email
-delivery remain unavailable. Buyer fees remain zero. Even a zero-price order
+[payment operations](payments.md). Individual test ticket issuance and local delivery previews are available; see [ticket operations](tickets.md) and [delivery operations](delivery.md). Promo redemption and external email delivery remain unavailable. Buyer fees remain zero. Even a zero-price order
 remains pending and grants no admission in this checkpoint. Use synthetic buyer
 details while testing locally.
 

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { transaction } from "../orders/service";
 import { newCredential, ticketKeys, type Keyring } from "./credentials";
+import { enqueueDelivery } from "../delivery/access";
 
 // Caller holds the order lock. New confirmation and recovery use identical issuance.
 export async function issueTickets(
@@ -58,6 +59,7 @@ export async function issueTickets(
       inserted++;
     }
   }
+  await enqueueDelivery(db, orderId);
   return inserted;
 }
 export async function recoverTickets(pool: Pool, keys: Keyring = ticketKeys()) {

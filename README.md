@@ -1,6 +1,6 @@
 # TicketSquare
 
-Mobile-first event ticketing for TicketSquare.ng. Checkpoint 4 adds guest checkout, exact server pricing, inventory reservations, cancellation and expiry. Organizer MFA, event management and public pages are available. Payments and ticket issuance are not implemented yet.
+Mobile-first event ticketing for TicketSquare.ng. Organizer MFA, events, inventory reservations, test Paystack payments, individual QR admissions and private ticket recovery are available. Email delivery currently produces local previews only.
 
 ## Requirements and local setup
 
@@ -64,8 +64,7 @@ your account and publish an event. Follow [checkout operations](docs/checkout.md
 try reservations and run `pnpm orders:worker` in a second terminal for timely stock
 release. Checkpoint 5 now adds test-only Paystack initialization, signed webhook receipt,
 verification and recovery. Run `pnpm payments:worker` alongside the expiry worker;
-see [payment setup and review](docs/payments.md). Public webhook delivery is the
-next joint test; ticket issuance follows after review.
+see [payment setup and review](docs/payments.md). The public test webhook and admission issuance have been verified. See [local delivery and recovery](docs/delivery.md) for the next checkpoint.
 
 The holding page establishes basic palette and layout; it does not replace the
 Stitch event/checkout/ticket designs. Security work remains at every later checkpoint;
@@ -96,4 +95,4 @@ shape. Start or restart the dev server after updating environment variables. Org
 Paid test orders now issue one private QR per admission, including each member of a group.
 See [ticket operations and key management](docs/tickets.md) before starting payments.
 Run `pnpm tickets:issue` to recover missing admissions for already-paid test orders.
-Email delivery, persistent ticket retrieval and gate check-in remain separate work.
+Run `pnpm tickets:deliver` for private local email previews and recovery links; see [delivery operations](docs/delivery.md). External email delivery and gate check-in remain separate work.

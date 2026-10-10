@@ -51,8 +51,8 @@ message; investigate before retrying. Monitor the difference between purchased a
 counts and actual tickets. New payments normally need no separate issuance worker.
 
 The payment and checkout pages link to `/tickets?order=<id>`. The URL contains only an
-order identifier; access requires the original private checkout cookie, whose server
-authorization expires 24 hours after checkout creation. The same-origin POST endpoint
+order identifier; access requires the original private checkout cookie (24 hours from checkout) or an
+order-scoped recovery session from a delivery link; see [delivery operations](delivery.md). The same-origin POST endpoint
 validates ownership, order/event status and ticket status, applies rate limits, and
 returns private/no-store PNG data. It exposes no buyer details, encryption material or
 raw QR tokens. Pages use no-referrer and noindex headers. Invalidated tickets omit QRs.
@@ -62,7 +62,7 @@ It is a bearer credential: sharing a copy does not create another admission. Onl
 it to the intended attendee. The browser view supplies event/date/category context;
 branded ticket documents and email attachments remain delivery work. Test QRs do not
 grant entry. Scanning, duplicate-entry rejection and staff authorization are not yet
-implemented, nor is private retrieval after the checkout cookie expires.
+implemented. Private recovery after checkout expiry is available through local delivery previews.
 
 ## Validation
 
