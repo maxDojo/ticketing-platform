@@ -1,4 +1,5 @@
 import type { Pool, PoolClient } from "pg";
+import { issueTickets } from "../tickets/issuance";
 import { transaction, release } from "../orders/service";
 import { verifiedTransaction, type VerifiedTransaction } from "./verification";
 export type ConfirmationOutcome =
@@ -54,7 +55,11 @@ export async function confirmPayment(
         await exception(db, paymentId, "provider_reversed");
         return "attention";
       }
-      return fulfilled?.payment_id === p.id ? "confirmed" : "attention";
+      if (fulfilled?.payment_id === p.id) {
+        if (o.status === "paid") await issueTickets(db, o.id);
+        return "confirmed";
+      }
+      return "attention";
     }
     if (p.status === "mismatched") return "attention";
     if (
@@ -186,6 +191,7 @@ export async function confirmPayment(
       [o.id, p.id],
     );
     await db.query("UPDATE orders SET status='paid' WHERE id=$1", [o.id]);
+    await issueTickets(db, o.id);
     await db.query(
       "UPDATE reservations SET state='committed' WHERE order_id=$1",
       [o.id],

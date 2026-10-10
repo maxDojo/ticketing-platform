@@ -27,6 +27,7 @@
     "organizer:create": "tsx scripts/create-organizer.ts",
     "orders:expire": "tsx scripts/expire-orders.ts",
     "orders:worker": "tsx scripts/expire-orders.ts --watch",
+    "tickets:issue": "tsx scripts/issue-tickets.ts",
     "payments:verify": "tsx scripts/verify-payments.ts",
     "payments:worker": "tsx scripts/verify-payments.ts --watch",
     "payments:webhook-proxy": "tsx scripts/webhook-test-proxy.ts"

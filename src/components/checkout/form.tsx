@@ -247,10 +247,15 @@ export function CheckoutForm({
           <p>
             {order.payment_started
               ? order.status === "paid"
-                ? "Your test payment is confirmed and inventory is secured. Ticket issuance is not available yet."
+                ? "Your test payment is confirmed and inventory is secured. View your test tickets below."
                 : "A test payment was started. Check its status before trying again. No tickets have been issued."
               : "No payment has been started and no tickets have been issued."}
           </p>
+          {order.status === "paid" && (
+            <Link className="button" href={`/tickets?order=${order.id}`}>
+              View test tickets
+            </Link>
+          )}
           {order.payment_reference && (
             <Link
               className="button secondary"

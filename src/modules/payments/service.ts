@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Pool } from "pg";
+import { ticketKeys } from "../tickets/credentials";
 import { digest, transaction } from "../orders/service";
 import { OrderError } from "../orders/input";
 import { checkoutUrl, type PaymentGateway } from "./paystack";
@@ -11,6 +12,7 @@ export async function initializePayment(
   origin: string,
   gateway: PaymentGateway,
 ) {
+  ticketKeys(); // Do not start another payment when admission credentials cannot be issued.
   if (!z.uuid().safeParse(id).success)
     throw new OrderError(404, "Order not found.");
   const attempt = await transaction(pool, async (db) => {

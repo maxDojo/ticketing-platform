@@ -159,6 +159,18 @@ export async function createOrder(pool: Pool, guest: string, input: unknown) {
     } = await db.query("SELECT clock_timestamp() AS now");
     if (event.starts_at <= current.now)
       throw new OrderError(409, "The event has already started.");
+    const admissions = types.reduce(
+      (sum, t) =>
+        sum +
+        t.admissions_per_unit *
+          v.items.find((i) => i.ticketTypeId === t.id)!.quantity,
+      0,
+    );
+    if (admissions > 500)
+      throw new OrderError(
+        400,
+        "A single order supports at most 500 admissions. Split this purchase into smaller orders.",
+      );
     let total = 0n;
     for (const t of types) {
       const quantity = v.items.find((i) => i.ticketTypeId === t.id)!.quantity;

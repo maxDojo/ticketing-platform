@@ -90,3 +90,10 @@ No mocked database is used. The test suite also checks the local runtime role pe
 
 The app shell can build without a reachable database but DATABASE_URL must have a valid
 shape. Start or restart the dev server after updating environment variables. Organizer screens start at `/admin/sign-in`; published pages use `/events/<slug>`.
+
+## Test ticket issuance
+
+Paid test orders now issue one private QR per admission, including each member of a group.
+See [ticket operations and key management](docs/tickets.md) before starting payments.
+Run `pnpm tickets:issue` to recover missing admissions for already-paid test orders.
+Email delivery, persistent ticket retrieval and gate check-in remain separate work.

@@ -124,10 +124,7 @@ sale windows, quantity limits, event status and hold lifecycle. Guest checkout a
 its expiry worker now reserve and release stock. Promo usage remains checkpoint 9;
 fees and discounts are currently zero. See [checkout operations](checkout.md). Checkpoint 5 now verifies test-mode Paystack transactions, queues signed webhook
 receipts and prevents paid-state regressions. Durable jobs and exception records
-support recovery; public webhook delivery still needs an HTTPS integration test. Checkpoint 6 must issue credentials with reviewed
-encryption/key management and unique fulfillment. Checkpoint 8 supplies the CheckIn
+support recovery; public webhook delivery passed its HTTPS integration test on 2026-10-10. Checkpoint 6 now issues encrypted test credentials and independent admissions; see [ticket operations](tickets.md). Checkpoint 8 supplies the CheckIn
 record and admission authorization. Guest order APIs require a private browser credential.
 
-Ticket credential columns are storage contracts only: SHA-256 verifier hex, encrypted
-credential envelope and key identifier. Only synthetic tests use placeholder encrypted
-values. No production issuance or encryption implementation is present.
+Ticket credentials use SHA-256 verifiers and AES-256-GCM envelopes with dedicated key identifiers. Issuance remains test-only. Production key management, delivery/retrieval beyond the checkout browser and gate check-in remain launch requirements.

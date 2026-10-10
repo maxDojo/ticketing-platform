@@ -16,6 +16,8 @@ export default defineConfig({
     reuseExistingServer: false,
     env: {
       APP_URL: "http://127.0.0.1:3100",
+      TICKET_ACTIVE_KEY_ID: "browser",
+      TICKET_ENCRYPTION_KEYS: JSON.stringify({ browser: "42".repeat(32) }),
       PAYSTACK_MODE: "test",
       PAYSTACK_SECRET_KEY: "sk_test_syntheticbrowserfixture123",
     },

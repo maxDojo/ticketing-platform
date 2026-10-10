@@ -1,7 +1,7 @@
 # Test payments — initialization, verification and recovery
 
 Paystack integration remains opt-in and **test-only**. Live credentials are rejected.
-This checkpoint confirms payments and secures inventory. QR issuance, email delivery,
+This checkpoint confirms payments, secures inventory and issues test admissions. Email delivery,
 refund execution, dispute handling and production deployment are still separate work.
 
 ## Local setup and joint review
@@ -54,7 +54,7 @@ Paystack cannot deliver to localhost. **No public tunnel has been configured.**
 The next joint check should expose only this endpoint through a temporary HTTPS
 proxy after approval, then configure that address in the Paystack test dashboard.
 Never expose the entire development server, admin pages, or database for this test.
-Actual external webhook delivery remains unverified until that check is completed.
+Actual external webhook delivery was verified on 2026-10-10 using the restricted temporary proxy, then the tunnel and proxy were stopped.
 See [Paystack's webhook documentation](https://paystack.com/docs/payments/webhooks/).
 
 ### Prepared local proxy
@@ -113,7 +113,7 @@ The expiry worker also locks order before inventory. Provider requests happen
 outside these transactions. Successful verification, actual fees, inventory movement,
 a unique fulfillment record and the paid state commit together. Database guards
 prevent successful-payment and paid-order regressions, and one fulfillment per order
-prevents repeated delivery. No tickets are created yet.
+prevents repeated delivery. Test admission credentials are now created in the same transaction; see [ticket operations](tickets.md).
 
 If the deadline passed, any remaining hold is first released and stock is reacquired
 atomically. If stock is unavailable, or the order/event is unavailable, received
@@ -143,6 +143,5 @@ result for their own fixture; they do not fake provider results for other local 
 
 The recovery worker was also run against the previously completed Paystack-account
 test transaction: NGN 1,000 verified, NGN 15 provider fees recorded, order paid,
-reserved units zero and sold units one. No real money moved. Public webhook delivery
-still needs the jointly reviewed HTTPS test. Production keys remain blocked until
+reserved units zero and sold units one. No real money moved. Public webhook delivery was verified on 2026-10-10: one durable receipt, one verification attempt, one fulfillment, one sold admission and no payment exceptions for a NGN 1,000 test payment (NGN 15 fees). Production keys remain blocked until
 fulfillment, recovery operations and the broader launch gates are complete.
