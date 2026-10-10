@@ -32,7 +32,7 @@ Database sessions store only SHA-256 hashes. Grant material uses AES-256-GCM wit
 HKDF-separated key derived from the ticket keyring and a grant-specific authenticated
 context. Keep old keyring entries while grants or tickets reference them. Revoking a
 grant also denies its sessions. Expired sessions cannot retrieve tickets. Delivery,
-resend and redemption require a paid, fulfilled order for a published future event.
+resend and redemption require a paid, fulfilled order for a published event. Recovery remains available after the event starts so separately arriving guests can retrieve their admissions.
 
 `/tickets/recover` accepts the buyer email and order reference. Responses are neutral
 for matches, mismatches and throttled requests, with a minimum response delay. Limits

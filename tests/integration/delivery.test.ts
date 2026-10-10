@@ -282,3 +282,21 @@ it("reclaims expired leases and escalates repeated failures without issuing more
     ).rows[0].n,
   ).toBe(2);
 });
+
+it("allows delivery, resend and recovery after the event starts for separate arrivals", async () => {
+  const f = await fixture();
+  await pool.query(
+    "UPDATE events SET starts_at=now()-interval '1 hour' WHERE id=$1",
+    [f.event.id],
+  );
+  const mail = (await deliverAll()).find((m) => m.to === f.email)!;
+  expect(mail).toBeDefined();
+  await requestResend(pool, f.email, f.order.reference);
+  const resent = (await deliverAll()).find((m) => m.to === f.email)!;
+  expect(resent).toBeDefined();
+  const recovered = await redeemAccess(pool, token(resent));
+  expect(
+    (await guestTickets(pool, "", f.order.id, undefined, recovered.session))
+      .tickets,
+  ).toHaveLength(2);
+});

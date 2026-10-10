@@ -41,7 +41,7 @@ export async function requestResend(
       rows: [order],
     } = await db.query(
       `SELECT o.id FROM orders o JOIN events e ON e.id=o.event_id JOIN payment_fulfillments f ON f.order_id=o.id
-      WHERE o.reference=$1 AND lower(o.buyer_email)=$2 AND o.status='paid' AND e.status='published' AND e.starts_at>clock_timestamp()
+      WHERE o.reference=$1 AND lower(o.buyer_email)=$2 AND o.status='paid' AND e.status='published'
       AND EXISTS (SELECT 1 FROM tickets t WHERE t.order_id=o.id AND t.status='valid') FOR SHARE OF o,e`,
       [reference, email],
     );
@@ -70,7 +70,7 @@ export async function redeemAccess(pool: Pool, token: string) {
     const {
       rows: [order],
     } = await db.query(
-      "SELECT o.id FROM orders o JOIN events e ON e.id=o.event_id WHERE o.id=$1 AND o.status='paid' AND e.status='published' AND e.starts_at>clock_timestamp() FOR SHARE OF o,e",
+      "SELECT o.id FROM orders o JOIN events e ON e.id=o.event_id WHERE o.id=$1 AND o.status='paid' AND e.status='published' FOR SHARE OF o,e",
       [scope.order_id],
     );
     const {

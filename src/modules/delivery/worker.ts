@@ -46,7 +46,7 @@ export async function processDeliveryJobs(
   // Repairs older paid orders. Never enqueue pending or incompletely issued orders.
   await pool.query(`INSERT INTO ticket_delivery_jobs (order_id,business_key)
     SELECT o.id,'initial:'||o.id FROM orders o JOIN payment_fulfillments f ON f.order_id=o.id JOIN events e ON e.id=o.event_id
-    WHERE o.status='paid' AND e.status='published' AND e.starts_at>clock_timestamp()
+    WHERE o.status='paid' AND e.status='published'
     AND (SELECT count(*) FROM tickets t WHERE t.order_id=o.id)=(SELECT sum(i.quantity::bigint*i.admissions_per_unit) FROM order_items i WHERE i.order_id=o.id)
     ON CONFLICT (business_key) DO NOTHING`);
   let processed = 0;
@@ -73,7 +73,7 @@ export async function processDeliveryJobs(
           rows: [order],
         } = await db.query(
           `SELECT o.id,o.reference,o.buyer_email,e.name FROM orders o JOIN events e ON e.id=o.event_id
-          WHERE o.id=$1 AND o.status='paid' AND e.status='published' AND e.starts_at>clock_timestamp()
+          WHERE o.id=$1 AND o.status='paid' AND e.status='published'
           AND EXISTS (SELECT 1 FROM tickets t WHERE t.order_id=o.id AND t.status='valid') FOR SHARE OF o,e`,
           [job.order_id],
         );
