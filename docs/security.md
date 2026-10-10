@@ -147,6 +147,5 @@ and dedicated-key AES-256-GCM envelopes are separate from public references and 
 retrieval authorization. Envelopes bind ticket identity and key/version context. Missing
 keys fail closed. Private viewing/downloads require the checkout cookie and do not extend
 its 24-hour authorization window. See [key management and remaining launch gates](tickets.md).
-Email/outbox delivery, durable retrieval links, staff check-in and managed production key
-storage are not included in this checkpoint. Actual public Paystack webhook delivery
+A transactional outbox and durable private retrieval are implemented with local-only email previews; see [delivery security and operations](delivery.md). External email delivery, staff check-in and managed production key storage remain pending. Actual public Paystack webhook delivery
 passed on 2026-10-10; its temporary tunnel and proxy were closed afterward.

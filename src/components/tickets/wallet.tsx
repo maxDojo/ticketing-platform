@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 type Ticket = {
   id: string;
@@ -47,9 +48,10 @@ export function TicketWallet() {
         the same credential.
       </p>
       <p>
-        Access in this checkout browser lasts 24 hours. Save each ticket now.
-        Email delivery and check-in are not available yet.
+        Private browser access lasts 24 hours. Save each ticket now. Delivery is
+        currently a local preview; check-in is not available yet.
       </p>
+      <Link href="/tickets/recover">Request a new ticket link</Link>
       {error && <p role="alert">{error}</p>}
       {!data && !error && <p>Loading tickets…</p>}
       {data && (

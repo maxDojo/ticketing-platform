@@ -1,9 +1,11 @@
 import QRCode from "qrcode";
 import { z } from "zod";
+import { cookies } from "next/headers";
+import { accessCookie } from "@/modules/delivery/http";
 import { getPool } from "@/db/client";
 import { checkOrigin, readJson, failure } from "@/modules/auth/http";
 import {
-  guestIdentity,
+  guestCookie,
   checkoutLimit,
   orderFailure,
 } from "@/modules/orders/http";
@@ -17,8 +19,18 @@ const headers = {
 export async function POST(request: Request) {
   try {
     checkOrigin(request);
-    const guest = await guestIdentity();
-    await checkoutLimit(guest, "tickets", 60);
+    const jar = await cookies();
+    const guest = jar.get(guestCookie)?.value ?? "";
+    const access = jar.get(accessCookie)?.value;
+    const validGuest = /^[a-f0-9]{64}$/.test(guest) ? guest : "";
+    const validAccess =
+      access && /^[a-f0-9]{64}$/.test(access) ? access : undefined;
+    if (!validGuest && !validAccess)
+      throw new OrderError(
+        401,
+        "Open your private ticket link or use the checkout browser.",
+      );
+    await checkoutLimit(validAccess ?? validGuest, "tickets", 60);
     const input = z
       .object({ orderId: z.uuid(), ticketId: z.uuid().optional() })
       .strict()
@@ -26,9 +38,10 @@ export async function POST(request: Request) {
     if (!input.success) throw new OrderError(400, "Invalid ticket request.");
     const data = await guestTickets(
       getPool(),
-      guest,
+      validGuest,
       input.data.orderId,
       input.data.ticketId,
+      validAccess,
     );
     const tickets = await Promise.all(
       data.tickets.map(async ({ token, ...ticket }) => ({

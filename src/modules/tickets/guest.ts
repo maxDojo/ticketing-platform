@@ -9,6 +9,7 @@ export async function guestTickets(
   guest: string,
   orderId: string,
   ticketId?: string,
+  accessSession?: string,
 ) {
   if (
     !z.uuid().safeParse(orderId).success ||
@@ -20,8 +21,10 @@ export async function guestTickets(
       rows: [order],
     } = await db.query(
       `SELECT o.status,e.name,e.venue,e.starts_at,e.timezone,e.status AS event_status FROM orders o JOIN checkout_requests c ON c.order_id=o.id JOIN events e ON e.id=o.event_id
-      WHERE o.id=$1 AND c.guest_hash=$2 AND c.created_at>clock_timestamp()-interval '24 hours' FOR SHARE OF o,e`,
-      [orderId, digest(guest)],
+      WHERE o.id=$1 AND ((c.guest_hash=$2 AND c.created_at>clock_timestamp()-interval '24 hours') OR EXISTS (
+        SELECT 1 FROM ticket_access_sessions s JOIN ticket_access_grants g ON g.id=s.grant_id
+        WHERE s.token_hash=$3 AND g.order_id=o.id AND s.expires_at>clock_timestamp() AND g.revoked_at IS NULL)) FOR SHARE OF o,e`,
+      [orderId, digest(guest), accessSession ? digest(accessSession) : null],
     );
     if (!order) throw new OrderError(404, "Tickets not found in this browser.");
     if (order.status !== "paid" || order.event_status !== "published")

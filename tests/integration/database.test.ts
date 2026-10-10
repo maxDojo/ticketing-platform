@@ -94,7 +94,7 @@ it("applies committed migrations twice without duplicating tables or journal ent
       (await pool.query("SELECT count(*) FROM drizzle.__drizzle_migrations"))
         .rows[0].count,
     ),
-  ).toBe(9);
+  ).toBe(10);
 });
 it("preserves reservation snapshots when the organizer changes the duration", async () => {
   const f = await fixture();

@@ -11,3 +11,6 @@ test-results/
 *.log
 
 .pnpm-store/
+
+# Private local mail previews contain buyer data and bearer links.
+.local/
