@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatMoney } from "@/modules/events/validation";
 type State = {
+  id: string;
   status: string;
   payment_status: string | null;
   payment_attention: boolean;
@@ -88,7 +89,7 @@ export function PaymentStatus({ reference }: { reference: string | null }) {
       )}
       <p>
         {confirmed
-          ? "Your test payment is confirmed and inventory is secured. Ticket issuance is not available yet."
+          ? "Your test payment is confirmed and inventory is secured. Your test tickets are available from this browser."
           : attention
             ? "This payment requires organizer review. Do not pay again. A refund has not been confirmed."
             : failed
@@ -108,6 +109,11 @@ export function PaymentStatus({ reference }: { reference: string | null }) {
       )}
       {state && (
         <Link href={`/checkout/${state.event_slug}`}>Return to your order</Link>
+      )}
+      {confirmed && state && (
+        <Link className="button" href={`/tickets?order=${state.id}`}>
+          View test tickets
+        </Link>
       )}
     </section>
   );

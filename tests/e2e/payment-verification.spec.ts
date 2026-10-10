@@ -6,6 +6,10 @@ import { Pool } from "pg";
 import { databaseConfig } from "../../src/config/database";
 import { confirmPayment } from "../../src/modules/payments/confirmation";
 if (existsSync(".env.local")) loadEnvFile(".env.local");
+process.env.TICKET_ACTIVE_KEY_ID = "browser";
+process.env.TICKET_ENCRYPTION_KEYS = JSON.stringify({
+  browser: "42".repeat(32),
+});
 const url = process.env.MIGRATION_DATABASE_URL;
 if (
   !url ||
@@ -138,7 +142,50 @@ test("signed webhook queues verification and the owning browser sees server-conf
         )
       ).rows[0],
     ).toEqual({ reserved_units: 0, sold_units: 1 });
+    await page.getByRole("link", { name: "View test tickets" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Your test tickets" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("img", { name: "QR for Test admission, admission 1" }),
+    ).toBeVisible();
+    const download = page.waitForEvent("download");
+    await page.getByRole("link", { name: "Download admission 1 QR" }).click();
+    expect((await download).suggestedFilename()).toMatch(/^TST-.*\.png$/);
+    const privateResponse = await context.request.post("/api/tickets", {
+      data: { orderId: o.id },
+      headers: { Origin: origin },
+    });
+    expect(privateResponse.status()).toBe(200);
+    expect(privateResponse.headers()["cache-control"]).toContain("no-store");
+    expect(privateResponse.headers()["referrer-policy"]).toBe("no-referrer");
+    const payload = await privateResponse.json();
+    expect(payload.tickets).toHaveLength(1);
+    expect(payload.tickets[0].token).toBeUndefined();
+    expect(payload.tickets[0].qr).toMatch(/^data:image\/png;base64,/);
+    const other = await context.browser()!.newContext();
+    try {
+      await other.request.post(`${origin}/api/checkout/session`, {
+        data: {},
+        headers: { Origin: origin },
+      });
+      expect(
+        (
+          await other.request.post(`${origin}/api/tickets`, {
+            data: { orderId: o.id },
+            headers: { Origin: origin },
+          })
+        ).status(),
+      ).toBe(404);
+    } finally {
+      await other.close();
+    }
+    await page.screenshot({
+      path: test.info().outputPath("ticket-wallet.png"),
+      fullPage: true,
+    });
   } finally {
+    await pool.query("DELETE FROM tickets WHERE event_id=$1", [e.id]);
     for (const table of [
       "payment_webhook_receipts",
       "payment_fulfillments",

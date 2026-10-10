@@ -5,8 +5,10 @@ import { databaseConfig } from "../src/config/database";
 import { paymentConfig } from "../src/config/payments";
 import { paystackVerifier } from "../src/modules/payments/verification";
 import { processPaymentJobs } from "../src/modules/payments/jobs";
+import { ticketKeys } from "../src/modules/tickets/credentials";
 loadEnvConfig(process.cwd());
 async function main() {
+  ticketKeys();
   const config = paymentConfig(process.env);
   if (!config) throw new Error("Test payment configuration required");
   const pool = new Pool(databaseConfig(process.env.DATABASE_URL));
