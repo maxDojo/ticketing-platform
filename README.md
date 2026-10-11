@@ -96,3 +96,7 @@ Paid test orders now issue one private QR per admission, including each member o
 See [ticket operations and key management](docs/tickets.md) before starting payments.
 Run `pnpm tickets:issue` to recover missing admissions for already-paid test orders.
 Run `pnpm tickets:deliver` for private local email previews and recovery links; see [delivery operations](docs/delivery.md). External email delivery remains separate work. Online test gate check-in is available; see [staff setup and check-in operations](docs/check-in.md).
+
+## Organizer reports
+
+Event owners can search orders and admissions, review sales/payment/attendance totals and download protected CSV exports. See [reporting definitions and export handling](docs/reporting.md). Refund execution and accounting remain separate work.

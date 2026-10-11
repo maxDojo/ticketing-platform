@@ -160,3 +160,13 @@ The runtime cannot grant staff access or change/delete admission records. See
 [check-in operations](check-in.md) for revocation timing and failure handling.
 Physical device/venue testing, operational account recovery, production monitoring,
 refund/cancellation workflows and independent security review remain launch work.
+
+## Organizer reporting review
+
+Report services recheck MFA, session expiry, active organizer membership and event
+ownership in a consistent database snapshot. Gate staff cannot view/export organizer
+reports. Search and export requests use same-origin private POSTs, bounded pagination,
+export row caps and per-account throttles. Fixed CSV column allowlists exclude ticket
+credentials and payment secrets. Potential formula cells receive a visible text prefix;
+exports are audited before delivery. Exported buyer contact data remains sensitive;
+see [reporting operations](reporting.md) for handling and remaining launch limits.

@@ -337,3 +337,35 @@ details[open] summary {
   background: #fff5df;
   color: #78350f;
 }
+
+.report-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+}
+.report-table {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.report-table table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.9rem;
+}
+.report-table caption {
+  text-align: left;
+  font-weight: 700;
+  padding: 1rem 0;
+}
+.report-table th,
+.report-table td {
+  text-align: left;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  min-width: 7rem;
+}
+.report-table td {
+  overflow-wrap: anywhere;
+  max-width: 20rem;
+}
