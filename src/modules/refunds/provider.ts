@@ -90,7 +90,10 @@ export function paystackRefunds(
       if (!/^[A-Za-z0-9.=-]{1,100}$/.test(job.reference))
         throw new Error("Invalid reference");
       const verified = z
-        .object({ status: z.literal(true), data: transaction })
+        .object({
+          status: z.literal(true),
+          data: transaction.extend({ status: z.string() }),
+        })
         .parse(
           await request(
             `/transaction/verify/${encodeURIComponent(job.reference)}`,
@@ -120,7 +123,11 @@ export function paystackRefunds(
         list.data.length > 1
       )
         throw new Error("Refund history requires review");
-      if (!list.data.length) return null;
+      if (!list.data.length) {
+        if (verified.status !== "success")
+          throw new Error("Transaction is not refundable");
+        return null;
+      }
       const found = match(list.data[0], job, verified.id);
       const detail = z
         .object({ status: z.literal(true), data: z.unknown() })

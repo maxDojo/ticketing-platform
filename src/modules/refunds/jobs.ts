@@ -24,15 +24,17 @@ export async function processRefundJobs(pool: Pool, gateway: RefundGateway) {
       state = "attention";
     try {
       result = await gateway.inspect(job);
-      if (!result && !job.dispatch_started_at) {
+      if (!result && !job.dispatch_started_at && !job.provider_id) {
         // Commit the dispatch fence before any external side effect. Never clear it.
         const fence = await pool.query(
           "UPDATE refunds SET dispatch_started_at=now() WHERE id=$1 AND lease_id=$2 AND lease_expires_at>now() AND dispatch_started_at IS NULL RETURNING id",
           [job.id, lease],
         );
         if (fence.rowCount) {
-          await gateway.create(job);
+          const created = await gateway.create(job);
           result = await gateway.inspect(job);
+          if (result && created.id !== result.id)
+            throw new Error("Refund identity changed after creation");
         }
       }
       if (result) {

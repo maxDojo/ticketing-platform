@@ -7,6 +7,7 @@ const job = {
   currency: "NGN",
 };
 const txn = {
+  status: "success",
   id: 42,
   reference: job.reference,
   domain: "test",
@@ -106,4 +107,14 @@ it("rejects live credentials and oversized responses", async () => {
       vi.fn(async () => new Response("x".repeat(131073))),
     ).inspect(job),
   ).rejects.toThrow("Invalid refund response");
+});
+
+it("does not dispatch for a reversed transaction with no matching refund", async () => {
+  const transport = fake([
+    { status: true, data: { ...txn, status: "reversed" } },
+    { status: true, data: [] },
+  ]);
+  await expect(
+    paystackRefunds("sk_test_synthetic12345", transport).inspect(job),
+  ).rejects.toThrow("Transaction is not refundable");
 });

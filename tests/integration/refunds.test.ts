@@ -363,3 +363,21 @@ it("an audit failure rolls back both refund approval and ticket invalidation", a
     await pool.query("DROP FUNCTION fail_refund_audit()");
   }
 });
+it("never submits again if an already observed provider refund temporarily disappears", async () => {
+  const f = await fixture(),
+    a = await staff(f.event.id, true),
+    r = await approveRefund(pool, a, f.event.id, await approval(f));
+  const create = vi.fn(async () => ({ id: "99", status: "pending" }));
+  await processRefundJobs(pool, {
+    inspect: async (job) => ({ id: job.id, status: "pending" }),
+    create,
+  });
+  await pool.query("UPDATE refunds SET next_attempt_at=now() WHERE id=$1", [
+    r.id,
+  ]);
+  await processRefundJobs(pool, { inspect: async () => null, create });
+  expect(create).not.toHaveBeenCalled();
+  expect((await refundView(pool, a, f.event.id)).payments[0].refund_state).toBe(
+    "attention",
+  );
+});
