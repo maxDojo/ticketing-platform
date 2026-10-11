@@ -95,4 +95,4 @@ shape. Start or restart the dev server after updating environment variables. Org
 Paid test orders now issue one private QR per admission, including each member of a group.
 See [ticket operations and key management](docs/tickets.md) before starting payments.
 Run `pnpm tickets:issue` to recover missing admissions for already-paid test orders.
-Run `pnpm tickets:deliver` for private local email previews and recovery links; see [delivery operations](docs/delivery.md). External email delivery and gate check-in remain separate work.
+Run `pnpm tickets:deliver` for private local email previews and recovery links; see [delivery operations](docs/delivery.md). External email delivery remains separate work. Online test gate check-in is available; see [staff setup and check-in operations](docs/check-in.md).

@@ -8,7 +8,11 @@ import { z } from "zod";
 import { databaseConfig } from "../src/config/database";
 loadEnvConfig(process.cwd());
 async function main() {
-  const [email, name] = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  const staff = args[0] === "--staff";
+  const [email, name, eventId] = args.slice(staff ? 1 : 0);
+  if (staff && !z.uuid().safeParse(eventId).success)
+    throw new Error("Usage: pnpm staff:create email name event-id");
   if (!z.email().safeParse(email).success || !name?.trim() || name.length > 200)
     throw new Error("Usage: pnpm organizer:create email name");
   if (!process.stdin.isTTY)
@@ -21,7 +25,7 @@ async function main() {
     },
   });
   const rl = createInterface({ input: process.stdin, output, terminal: true });
-  process.stdout.write("New organizer password (14–128 characters; hidden): ");
+  process.stdout.write("New account password (14–128 characters; hidden): ");
   const password = await new Promise<string>((resolve) =>
     rl.question("", resolve),
   );
@@ -43,15 +47,25 @@ async function main() {
         'INSERT INTO auth_account (id,"accountId","providerId","userId",password) VALUES ($1,$2,\'credential\',$2,$3)',
         [randomUUID(), id, await hashPassword(password)],
       );
-      await client.query("INSERT INTO organizers (user_id) VALUES ($1)", [id]);
+      if (staff)
+        await client.query(
+          "INSERT INTO event_staff (user_id,event_id) VALUES ($1,$2)",
+          [id, eventId],
+        );
+      else
+        await client.query("INSERT INTO organizers (user_id) VALUES ($1)", [
+          id,
+        ]);
       await client.query("COMMIT");
       console.log(
-        "Organizer created. Sign in and enroll an authenticator before managing events.",
+        staff
+          ? "Staff account created. Sign in at /staff/sign-in and enroll an authenticator."
+          : "Organizer created. Sign in and enroll an authenticator before managing events.",
       );
     } catch {
       await client.query("ROLLBACK");
       throw new Error(
-        "Could not create organizer; check configuration and whether this email already exists.",
+        "Could not create account; check configuration and whether this email already exists.",
       );
     } finally {
       client.release();

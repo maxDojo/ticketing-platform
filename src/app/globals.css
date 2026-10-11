@@ -315,3 +315,25 @@ details[open] summary {
 .ticket-wallet p {
   overflow-wrap: anywhere;
 }
+
+.gate-video {
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  background: #111;
+  border-radius: 1rem;
+}
+.gate-result {
+  padding: 1rem;
+  border: 2px solid currentColor;
+  border-radius: 1rem;
+  overflow-wrap: anywhere;
+}
+.gate-success {
+  background: #e9f9ed;
+  color: #14532d;
+}
+.gate-warning {
+  background: #fff5df;
+  color: #78350f;
+}
