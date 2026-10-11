@@ -71,6 +71,13 @@
       "when": 1791651986081,
       "tag": "0009_ticket_delivery",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791655723308,
+      "tag": "0010_event_check_in",
+      "breakpoints": true
     }
   ]
 }

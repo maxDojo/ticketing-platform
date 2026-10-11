@@ -2,7 +2,7 @@ import { getAuth } from "@/modules/auth/server";
 import { getPool } from "@/db/client";
 import { consumeLimit } from "@/modules/auth/throttle";
 import { checkOrigin, readJson, failure } from "@/modules/auth/http";
-import { requireOrganizer } from "@/modules/auth/access";
+import { requireStaffAccount } from "@/modules/checkin/http";
 const paths = new Set([
   "sign-in/email",
   "sign-out",
@@ -41,11 +41,11 @@ async function handle(request: Request) {
           { status: 429 },
         );
       if (path === "two-factor/enable") {
-        const actor = await requireOrganizer(request.headers, true);
-        if (actor.twoFactorEnabled) await requireOrganizer(request.headers);
+        const actor = await requireStaffAccount(request.headers, true);
+        if (actor.twoFactorEnabled) await requireStaffAccount(request.headers);
       }
       if (["change-password", "revoke-sessions"].includes(path))
-        await requireOrganizer(request.headers);
+        await requireStaffAccount(request.headers);
       body.trustDevice = false;
       request = new Request(request.url, {
         method: "POST",

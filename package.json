@@ -32,13 +32,16 @@
     "tickets:issue": "tsx scripts/issue-tickets.ts",
     "payments:verify": "tsx scripts/verify-payments.ts",
     "payments:worker": "tsx scripts/verify-payments.ts --watch",
-    "payments:webhook-proxy": "tsx scripts/webhook-test-proxy.ts"
+    "payments:webhook-proxy": "tsx scripts/webhook-test-proxy.ts",
+    "staff:create": "tsx scripts/create-organizer.ts --staff",
+    "staff:access": "tsx scripts/staff-access.ts"
   },
   "dependencies": {
     "@js-temporal/polyfill": "0.5.1",
     "@next/env": "16.3.8",
     "better-auth": "1.7.6",
     "drizzle-orm": "0.45.3",
+    "jsqr": "1.4.0",
     "next": "16.3.8",
     "pg": "8.23.0",
     "qrcode": "1.5.4",

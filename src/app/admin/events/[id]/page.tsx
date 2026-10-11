@@ -30,6 +30,9 @@ export default async function Manage({
         <div>
           <p className="eyebrow">{event.status}</p>
           <h1>{event.name}</h1>
+          <p>
+            <Link href={`/staff/events/${id}`}>Open event check-in</Link>
+          </p>
           <Link href={`/events/${event.slug}?preview=${event.id}`}>
             Preview event ↗
           </Link>

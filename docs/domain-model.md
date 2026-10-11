@@ -35,8 +35,7 @@ recovery. The remaining application workflows below are plans for later checkpoi
 
 Checkpoint 2 introduced Event, TicketType, Order, OrderItem, Payment and Ticket.
 Checkpoint 3 added organizer authentication and admin audit records. Checkpoint 4
-adds reservations and private guest retry identities. CheckIn, Refund and Outbox
-remain future work. Keep attendee details on tickets initially if a standalone identity adds
+adds reservations and private guest retry identities. CheckIn and the delivery outbox are now implemented; Refund remains future work. Keep attendee details on tickets initially if a standalone identity adds
 no value. Discounts and promoter attribution arrive later with historical snapshots.
 
 Store amounts as integer minor units plus currency. Prefer PostgreSQL bigint with
@@ -127,4 +126,4 @@ receipts and prevents paid-state regressions. Durable jobs and exception records
 support recovery; public webhook delivery passed its HTTPS integration test on 2026-10-10. Checkpoint 6 now issues encrypted test credentials and independent admissions; see [ticket operations](tickets.md). Checkpoint 8 supplies the CheckIn
 record and admission authorization. Guest order APIs require a private browser credential.
 
-Ticket credentials use SHA-256 verifiers and AES-256-GCM envelopes with dedicated key identifiers. Issuance remains test-only. Local delivery previews now support recovery beyond the checkout browser; see [delivery operations](delivery.md). Production key management, external email delivery and gate check-in remain launch requirements.
+Ticket credentials use SHA-256 verifiers and AES-256-GCM envelopes with dedicated key identifiers. Issuance remains test-only. Local delivery previews now support recovery beyond the checkout browser; see [delivery operations](delivery.md). Production key management, external email delivery and event-day check-in rehearsal remain launch requirements.

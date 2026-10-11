@@ -15,6 +15,7 @@ export function proxy(request: NextRequest) {
   response.headers.set("Content-Security-Policy", policy);
   if (
     request.nextUrl.pathname.startsWith("/admin") ||
+    request.nextUrl.pathname.startsWith("/staff") ||
     request.nextUrl.pathname.startsWith("/api") ||
     request.nextUrl.pathname.startsWith("/events") ||
     request.nextUrl.pathname.startsWith("/checkout") ||

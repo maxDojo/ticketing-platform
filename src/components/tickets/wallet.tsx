@@ -49,7 +49,7 @@ export function TicketWallet() {
       </p>
       <p>
         Private browser access lasts 24 hours. Save each ticket now. Delivery is
-        currently a local preview; check-in is not available yet.
+        currently a local preview; gate check-in is available for tests only.
       </p>
       <Link href="/tickets/recover">Request a new ticket link</Link>
       {error && <p role="alert">{error}</p>}

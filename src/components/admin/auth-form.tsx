@@ -21,9 +21,11 @@ async function call(path: string, body: object) {
 export function AuthForm({
   enrollment = false,
   enabled = false,
+  staff = false,
 }: {
   enrollment?: boolean;
   enabled?: boolean;
+  staff?: boolean;
 }) {
   const router = useRouter();
   const [phase, setPhase] = useState(
@@ -47,7 +49,7 @@ export function AuthForm({
           rememberMe: false,
         });
         if (result.twoFactorRedirect) setPhase("verify");
-        else router.push("/admin/security");
+        else router.push(staff ? "/staff/security" : "/admin/security");
       } else if (phase === "enroll") {
         const result = await call("two-factor/enable", {
           password: data.get("password"),
@@ -62,7 +64,7 @@ export function AuthForm({
           backup ? "two-factor/verify-backup-code" : "two-factor/verify-totp",
           { code: data.get("code"), trustDevice: false },
         );
-        router.push("/admin/events");
+        router.push(staff ? "/staff" : "/admin/events");
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Please try again.");
@@ -81,7 +83,9 @@ export function AuthForm({
       </h1>
       <p className="muted">
         {phase === "password"
-          ? "Sign in to manage your events. Organizer accounts are invitation-only."
+          ? staff
+            ? "Sign in with your assigned staff account."
+            : "Sign in to manage your events. Organizer accounts are invitation-only."
           : phase === "enroll"
             ? "An authenticator app is required before you can manage events."
             : "Enter your authenticator code to continue."}
@@ -169,14 +173,14 @@ export function AuthForm({
     </form>
   );
 }
-export function SignOut() {
+export function SignOut({ staff = false }: { staff?: boolean }) {
   const router = useRouter();
   return (
     <button
       className="text-button"
       onClick={async () => {
         await call("sign-out", {});
-        router.push("/admin/sign-in");
+        router.push(staff ? "/staff/sign-in" : "/admin/sign-in");
       }}
     >
       Sign out

@@ -61,8 +61,8 @@ Each PNG download holds one QR and its filename identifies the public reference.
 It is a bearer credential: sharing a copy does not create another admission. Only give
 it to the intended attendee. The browser view supplies event/date/category context;
 branded ticket documents and email attachments remain delivery work. Test QRs do not
-grant entry. Scanning, duplicate-entry rejection and staff authorization are not yet
-implemented. Private recovery after checkout expiry is available through local delivery previews.
+grant entry. Online test scanning, duplicate-entry rejection and event-scoped staff authorization
+are implemented; see [check-in operations](check-in.md). Private recovery after checkout expiry is available through local delivery previews.
 
 ## Validation
 
