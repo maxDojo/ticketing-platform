@@ -99,4 +99,4 @@ Run `pnpm tickets:deliver` for private local email previews and recovery links; 
 
 ## Organizer reports
 
-Event owners can search orders and admissions, review sales/payment/attendance totals and download protected CSV exports. See [reporting definitions and export handling](docs/reporting.md). Refund execution and accounting remain separate work.
+Event owners can search orders and admissions, review sales/payment/attendance totals and download protected CSV exports. See [reporting definitions and export handling](docs/reporting.md). Test-only full refunds and permanent event cancellation are available; see [refund operations](docs/refunds.md). Run `pnpm refunds:worker` to dispatch and reconcile approved refunds.

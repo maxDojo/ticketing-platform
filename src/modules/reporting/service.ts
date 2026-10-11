@@ -64,7 +64,11 @@ async function totals(db: PoolClient, eventId: string) {
     "SELECT status,count(*)::text AS count FROM orders WHERE event_id=$1 GROUP BY status ORDER BY status",
     [eventId],
   );
-  return { money, attendance, inventory, orderStates };
+  const { rows: refunds } = await db.query(
+    "SELECT currency,coalesce(sum(amount) FILTER(WHERE state='processed'),0)::text AS processed_minor,coalesce(sum(amount) FILTER(WHERE state='processed' AND kind='fulfilled'),0)::text AS refunded_sales_minor,coalesce(sum(amount) FILTER(WHERE state<>'processed'),0)::text AS unresolved_minor FROM refunds WHERE event_id=$1 GROUP BY currency ORDER BY currency",
+    [eventId],
+  );
+  return { money, attendance, inventory, orderStates, refunds };
 }
 function filter(input: ReportInput) {
   const search = input.search.replace(/[\\%_]/g, "\\$&");

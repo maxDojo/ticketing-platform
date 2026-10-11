@@ -8,6 +8,12 @@ type Data = {
   page: number;
   pageSize: number;
   summary: {
+    refunds: {
+      currency: string;
+      processed_minor: string;
+      refunded_sales_minor: string;
+      unresolved_minor: string;
+    }[];
     money: {
       currency: string;
       fulfilled_orders: string;
@@ -138,8 +144,7 @@ export function Reports({ eventId }: { eventId: string }) {
     <div className="stack">
       <p>
         Test-mode reporting. Totals cover the whole event; filters apply to the
-        list and export. Refund accounting and settlement reconciliation are not
-        implemented.
+        list and export. Settlement reconciliation is not implemented.
       </p>
       {error && (
         <p role="alert" className="error">
@@ -159,6 +164,20 @@ export function Reports({ eventId }: { eventId: string }) {
             {!data.summary.money.length && (
               <p>No fulfilled sales or verified payments yet.</p>
             )}
+            {data.summary.refunds.map((r) => (
+              <div key={r.currency}>
+                <h3>Refunds ({r.currency})</h3>
+                <p>
+                  Confirmed refunds: {money(r.processed_minor, r.currency)} · of
+                  fulfilled sales: {money(r.refunded_sales_minor, r.currency)}
+                </p>
+                <p>
+                  Unresolved refund approvals:{" "}
+                  {money(r.unresolved_minor, r.currency)}. Gross sales remain
+                  historical totals; confirmed refunds are shown separately.
+                </p>
+              </div>
+            ))}
             {data.summary.money.map((m) => (
               <article key={m.currency} className="report-metrics">
                 <p>

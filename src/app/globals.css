@@ -369,3 +369,9 @@ details[open] summary {
   overflow-wrap: anywhere;
   max-width: 20rem;
 }
+
+input.refund-confirm {
+  width: 24px;
+  min-height: 24px;
+  accent-color: var(--accent);
+}

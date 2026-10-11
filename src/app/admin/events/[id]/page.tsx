@@ -31,6 +31,9 @@ export default async function Manage({
           <p className="eyebrow">{event.status}</p>
           <h1>{event.name}</h1>
           <p>
+            <Link href={`/admin/events/${id}/refunds`}>
+              Refunds and cancellation
+            </Link>
             <Link href={`/admin/events/${id}/reports`}>
               Organizer reports and exports
             </Link>
