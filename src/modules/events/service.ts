@@ -183,6 +183,8 @@ export async function publishEvent(
       .where(and(eq(events.id, id), eq(events.organizerId, actor.userId)))
       .for("update");
     if (!event) throw new AccessError(404, "Event not found.");
+    if (event.status === "cancelled")
+      throw new AccessError(409, "Cancelled events cannot be republished.");
     if (publish) {
       const types = await tx
         .select()

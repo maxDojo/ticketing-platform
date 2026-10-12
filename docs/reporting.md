@@ -68,5 +68,7 @@ them; downstream consumers must preserve text handling. See the
 Tests cover duplicate-payment versus fulfilled-sales totals, exact fee sums, attendance,
 search, pagination, full filtered exports, the export cap, formula neutralization,
 MFA/ownership/staff isolation and audit failure. Browser checks exercise authenticated
-report pages and downloaded CSVs on desktop and mobile. Full refund handling, settlement
+report pages and downloaded CSVs on desktop and mobile. Settlement
 reporting, export retention controls and production-scale load testing remain launch work.
+
+Confirmed refunds are now shown separately from historical gross sales, with refunded fulfilled sales and unresolved refund approvals distinguished. See [refund operations](refunds.md). Settlement reconciliation remains separate work.

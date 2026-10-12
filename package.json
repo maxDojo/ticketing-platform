@@ -34,7 +34,9 @@
     "payments:worker": "tsx scripts/verify-payments.ts --watch",
     "payments:webhook-proxy": "tsx scripts/webhook-test-proxy.ts",
     "staff:create": "tsx scripts/create-organizer.ts --staff",
-    "staff:access": "tsx scripts/staff-access.ts"
+    "staff:access": "tsx scripts/staff-access.ts",
+    "refunds:process": "tsx scripts/process-refunds.ts",
+    "refunds:worker": "tsx scripts/process-refunds.ts --watch"
   },
   "dependencies": {
     "@js-temporal/polyfill": "0.5.1",
