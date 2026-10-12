@@ -77,7 +77,7 @@ established before launch.
 - Concurrent PostgreSQL tests cover atomic authentication limits and expiry.
 
 See [organizer operations](organizer-access.md) for setup and limitations. Recovery
-administration, security-management UI, rate-limit cleanup, host-specific proxy and
+administration, rate-limit cleanup, host-specific proxy and
 edge controls, monitoring, and a production security review remain launch gates.
 
 ## Added in checkpoint 4
@@ -170,3 +170,7 @@ export row caps and per-account throttles. Fixed CSV column allowlists exclude t
 credentials and payment secrets. Potential formula cells receive a visible text prefix;
 exports are audited before delivery. Exported buyer contact data remains sensitive;
 see [reporting operations](reporting.md) for handling and remaining launch limits.
+
+## Account security management
+
+Verified organizer and staff sessions can change passwords and revoke other/all sessions. Password changes force session rotation and fresh MFA verification, and successful responses omit the new session token. Same-origin checks, persistent throttles and live membership/MFA checks apply. Security mutations record requested/completed audit events without credential material. See [account security operations](account-security.md), including non-atomic failure handling and remaining administrative recovery requirements.
