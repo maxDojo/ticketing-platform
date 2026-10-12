@@ -40,8 +40,7 @@ transaction. Audit records contain actor, action, resource ID and timestamp.
 If an authenticator is lost, use an unused recovery code on the sign-in screen.
 There is no public email-reset flow in this checkpoint. If all factors are lost,
 contact the maintainer for identity-verified recovery; do not disable MFA through an
-ad hoc public endpoint. A tested administrative recovery procedure and account
-security management UI remain launch gates. Changing `BETTER_AUTH_SECRET` without
+ad hoc public endpoint. A tested administrative recovery procedure remains a launch gate. Verified organizers and staff can change passwords and revoke sessions on their Security pages; see [account security](account-security.md). Changing `BETTER_AUTH_SECRET` without
 a migration/recovery plan can make existing authenticators unreadable.
 
 For immediate access removal, a trusted database administrator can set

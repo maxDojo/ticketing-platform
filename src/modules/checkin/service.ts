@@ -79,7 +79,10 @@ export async function gateAccount(
       [actor.userId],
     );
     if (!role.allowed) throw new GateError(403, "Staff access is unavailable.");
-    return { twoFactorEnabled: !!session.twoFactorEnabled };
+    return {
+      twoFactorEnabled: !!session.twoFactorEnabled,
+      mfaVerified: !!session.mfaVerified,
+    };
   });
 }
 export async function gateEvents(pool: Pool, actor: GateActor) {

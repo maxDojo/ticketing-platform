@@ -30,5 +30,6 @@ export async function requireOrganizer(
     userId: session.user.id,
     name: session.user.name,
     twoFactorEnabled: !!session.user.twoFactorEnabled,
+    mfaVerified: !!rows[0].mfaVerified,
   };
 }

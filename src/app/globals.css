@@ -375,3 +375,8 @@ input.refund-confirm {
   min-height: 24px;
   accent-color: var(--accent);
 }
+input.security-confirm {
+  width: 24px;
+  min-height: 24px;
+  accent-color: var(--accent);
+}
