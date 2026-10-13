@@ -36,7 +36,8 @@
     "staff:create": "tsx scripts/create-organizer.ts --staff",
     "staff:access": "tsx scripts/staff-access.ts",
     "refunds:process": "tsx scripts/process-refunds.ts",
-    "refunds:worker": "tsx scripts/process-refunds.ts --watch"
+    "refunds:worker": "tsx scripts/process-refunds.ts --watch",
+    "ops:check": "tsx scripts/check-operations.ts"
   },
   "dependencies": {
     "@js-temporal/polyfill": "0.5.1",
