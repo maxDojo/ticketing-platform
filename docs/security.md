@@ -182,3 +182,11 @@ attention states, and paid orders missing tickets or fulfillment. The connection
 is read-only and output contains aggregate counts only. External alert delivery,
 missing-run detection and process supervision remain deployment gates; see
 [operations health](operations.md).
+
+## Backup recovery verification
+
+CI runs a synthetic `pg_dump`/`pg_restore` drill in disposable local databases,
+checking restored data, constraints, triggers and encrypted ticket recovery. It
+never backs up or restores the application database. Managed encrypted backups,
+point-in-time recovery, separate key retrieval, runtime grants and a hosted restore
+rehearsal remain launch gates; see [backup and recovery](backup-recovery.md).

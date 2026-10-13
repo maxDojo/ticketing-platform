@@ -38,6 +38,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: PGPASSWORD=local-development-only psql -h 127.0.0.1 -p 5433 -U ticketsquare -d ticketsquare -v ON_ERROR_STOP=1 -f scripts/local-database.sql
       - run: pnpm db:migrate
+      - run: pnpm db:restore-drill
+        env:
+          RESTORE_DRILL_CONTAINER: ${{ job.services.postgres.id }}
       - run: pnpm test:integration
       - run: pnpm check
       - run: pnpm exec playwright install --with-deps chromium
