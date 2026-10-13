@@ -174,3 +174,11 @@ see [reporting operations](reporting.md) for handling and remaining launch limit
 ## Account security management
 
 Verified organizer and staff sessions can change passwords and revoke other/all sessions. Password changes force session rotation and fresh MFA verification, and successful responses omit the new session token. Same-origin checks, persistent throttles and live membership/MFA checks apply. Security mutations record requested/completed audit events without credential material. See [account security operations](account-security.md), including non-atomic failure handling and remaining administrative recovery requirements.
+
+## Operations visibility
+
+A private `pnpm ops:check` command reports overdue reservations and worker queues,
+attention states, and paid orders missing tickets or fulfillment. The connection
+is read-only and output contains aggregate counts only. External alert delivery,
+missing-run detection and process supervision remain deployment gates; see
+[operations health](operations.md).
