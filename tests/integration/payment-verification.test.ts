@@ -3,7 +3,7 @@ import { expect, it } from "vitest";
 import { accessOrder } from "../../src/modules/orders/service";
 import { createOrderTestContext } from "./helpers/orders";
 
-const { pool, inventory, paymentFixture } = createOrderTestContext();
+const { pool, paymentFixture } = createOrderTestContext();
 
 it("durably deduplicates signed raw webhooks, rejects tampering, and queues no foreign references", async () => {
   const { acceptWebhook } = await import("../../src/modules/payments/webhook");
