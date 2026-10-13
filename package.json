@@ -37,7 +37,8 @@
     "staff:access": "tsx scripts/staff-access.ts",
     "refunds:process": "tsx scripts/process-refunds.ts",
     "refunds:worker": "tsx scripts/process-refunds.ts --watch",
-    "ops:check": "tsx scripts/check-operations.ts"
+    "ops:check": "tsx scripts/check-operations.ts",
+    "db:restore-drill": "tsx scripts/restore-drill.ts"
   },
   "dependencies": {
     "@js-temporal/polyfill": "0.5.1",

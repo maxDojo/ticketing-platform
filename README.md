@@ -104,3 +104,5 @@ Event owners can search orders and admissions, review sales/payment/attendance t
 Verified organizers and staff can manage passwords and signed-in sessions from Security. See [account security](docs/account-security.md).
 
 Run `pnpm ops:check` to inspect overdue work and payment/ticket inconsistencies without changing records. See [operations health and response steps](docs/operations.md) for exit codes and deployment monitoring requirements.
+
+Run `pnpm db:restore-drill` to verify a synthetic PostgreSQL backup and restore in disposable local databases. See [backup and recovery](docs/backup-recovery.md) for prerequisites and production recovery gates.
